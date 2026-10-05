@@ -1,0 +1,1 @@
+{"root":["./src/App.test.tsx","./src/App.tsx","./src/api.ts","./src/main.tsx","./src/setupTests.ts","./src/components/AirwayList.tsx","./src/components/FlightList.tsx","./src/components/RouteMap.tsx","./e2e/flight-plan.spec.ts","./vite.config.ts","./playwright.config.ts"],"version":"5.9.3"}

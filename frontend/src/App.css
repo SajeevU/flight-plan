@@ -1,0 +1,33 @@
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color: #0f172a; background: #f8fafc; }
+
+.app { display: grid; grid-template-columns: 320px 1fr; height: 100%; }
+.sidebar { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-right: 1px solid #e2e8f0; background: #fff; min-height: 0; }
+.sidebar h1 { font-size: 1.15rem; margin: 4px 0; }
+.tabs { display: flex; gap: 4px; }
+.tabs button { flex: 1; padding: 6px; border: 1px solid #cbd5e1; background: #f1f5f9; border-radius: 6px; cursor: pointer; }
+.tabs button[aria-selected='true'] { background: #2563eb; color: #fff; border-color: #2563eb; }
+.sidebar input { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
+
+.list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
+.item { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: 8px; border: 0; border-bottom: 1px solid #f1f5f9; background: none; text-align: left; cursor: pointer; }
+.item:hover { background: #f1f5f9; }
+.item.selected { background: #dbeafe; }
+.item small { color: #64748b; }
+.empty { color: #64748b; }
+
+.content { position: relative; display: flex; flex-direction: column; min-height: 0; }
+.details { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px; background: #fff; border-bottom: 1px solid #e2e8f0; }
+.details button { padding: 8px 12px; border: 0; border-radius: 6px; background: #ea580c; color: #fff; cursor: pointer; white-space: nowrap; }
+.details button:disabled { opacity: 0.6; }
+.route-text { font-family: ui-monospace, monospace; font-size: 0.85rem; color: #334155; margin-top: 4px; }
+.route-text.alt { color: #c2410c; }
+.warn { color: #b45309; font-size: 0.85rem; margin-top: 4px; }
+.error { padding: 8px 14px; background: #fee2e2; color: #991b1b; }
+.map { flex: 1; min-height: 300px; }
+
+@media (max-width: 720px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: 40% 60%; }
+  .sidebar { border-right: 0; border-bottom: 1px solid #e2e8f0; }
+}

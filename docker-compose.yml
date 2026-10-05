@@ -1,0 +1,14 @@
+# Local run of the full stack: http://localhost:8080
+# Without CAAS_API_KEY the backend serves bundled fixture data.
+services:
+  backend:
+    build: ./backend
+    environment:
+      CAAS_API_KEY: ${CAAS_API_KEY:-}
+    ports: ["3000:8080"]
+  frontend:
+    build: ./frontend
+    environment:
+      BACKEND_URL: http://backend:8080
+    ports: ["8080:8080"]
+    depends_on: [backend]

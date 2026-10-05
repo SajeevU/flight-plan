@@ -1,0 +1,119 @@
+name: CI/CD
+
+# Every push and PR is tested. Pushes to main are also packaged into
+# container images, pushed to Artifact Registry and deployed to Cloud Run.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  REGION: ${{ vars.GCP_REGION || 'asia-southeast1' }}
+  REGISTRY: ${{ vars.GCP_REGION || 'asia-southeast1' }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/flight-plan
+
+jobs:
+  backend:
+    name: Backend (lint, typecheck, test)
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: backend/package-lock.json }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:cov
+      - uses: actions/upload-artifact@v4
+        with: { name: backend-coverage, path: backend/coverage }
+
+  frontend:
+    name: Frontend (lint, typecheck, test, build)
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: frontend/package-lock.json }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  e2e:
+    name: End-to-end (containers + Playwright)
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and start the stack (fixture data)
+        run: docker compose up -d --build --wait
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: frontend/package-lock.json }
+      - working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npx playwright test
+      - if: failure()
+        run: docker compose logs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: playwright-report, path: frontend/playwright-report, if-no-files-found: ignore }
+
+  deploy:
+    name: Build, push and deploy to Cloud Run
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT_ID != ''
+    needs: [e2e]
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      id-token: write # keyless auth to GCP via Workload Identity Federation
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build and push images
+        run: |
+          for svc in backend frontend; do
+            docker build --build-arg APP_VERSION=${{ github.sha }} \
+              -t $REGISTRY/$svc:${{ github.sha }} -t $REGISTRY/$svc:latest ./$svc
+            docker push --all-tags $REGISTRY/$svc
+          done
+
+      - name: Deploy backend
+        id: backend
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: flight-plan-backend
+          region: ${{ env.REGION }}
+          image: ${{ env.REGISTRY }}/backend:${{ github.sha }}
+          secrets: CAAS_API_KEY=caas-api-key:latest
+          flags: --allow-unauthenticated --max-instances=2
+
+      - name: Deploy frontend
+        id: frontend
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: flight-plan-frontend
+          region: ${{ env.REGION }}
+          image: ${{ env.REGISTRY }}/frontend:${{ github.sha }}
+          env_vars: BACKEND_URL=${{ steps.backend.outputs.url }}
+          flags: --allow-unauthenticated --max-instances=2
+
+      - name: Smoke test the deployment
+        run: |
+          curl -fsS ${{ steps.frontend.outputs.url }}/api/health
+          echo "Deployed: ${{ steps.frontend.outputs.url }}" >> $GITHUB_STEP_SUMMARY

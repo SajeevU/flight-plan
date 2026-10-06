@@ -1,0 +1,37 @@
+server:
+  port: ${PORT:8080}
+  shutdown: graceful
+  error:
+    include-message: always # the frontend shows the error message to the user
+
+spring:
+  application:
+    name: flight-plan-backend
+  jackson:
+    default-property-inclusion: non_null
+
+caas:
+  base-url: ${CAAS_BASE_URL:http://api.swimapisg.info:9080}
+  flights-path: ${CAAS_FLIGHTS_PATH:/flightmanager/displayAll}
+  geo-path: ${CAAS_GEO_PATH:/geopoints/list}
+  api-key: ${CAAS_API_KEY:}
+  mock: ${CAAS_MOCK:false}
+  timeout: 10s
+  flights-ttl: 60s
+  geo-ttl: 6h
+  fallback-ttl: 60s
+
+app:
+  version: ${APP_VERSION:dev}
+
+springdoc:
+  swagger-ui:
+    path: /api/docs
+  api-docs:
+    path: /api/docs.json
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

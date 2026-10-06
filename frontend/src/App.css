@@ -8,6 +8,7 @@ body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; colo
 .tabs { display: flex; gap: 4px; }
 .tabs button { flex: 1; padding: 6px; border: 1px solid #cbd5e1; background: #f1f5f9; border-radius: 6px; cursor: pointer; }
 .tabs button[aria-selected='true'] { background: #2563eb; color: #fff; border-color: #2563eb; }
+.source { margin: 0; padding: 4px 8px; border-radius: 6px; background: #fef3c7; color: #92400e; font-size: 0.8rem; }
 .sidebar input { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
 
 .list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }

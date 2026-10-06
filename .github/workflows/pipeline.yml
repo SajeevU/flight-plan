@@ -18,19 +18,16 @@ env:
 
 jobs:
   backend:
-    name: Backend (lint, typecheck, test)
+    name: Backend (compile, test, coverage)
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: backend } }
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm, cache-dependency-path: backend/package-lock.json }
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run test:cov
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21, cache: maven }
+      - run: mvn -B verify
       - uses: actions/upload-artifact@v4
-        with: { name: backend-coverage, path: backend/coverage }
+        with: { name: backend-coverage, path: backend/target/site/jacoco }
 
   frontend:
     name: Frontend (lint, typecheck, test, build)

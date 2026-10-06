@@ -41,4 +41,5 @@ export const api = {
   route: (id: string) => getJson<FlightRoute>(`/api/flights/${encodeURIComponent(id)}/route`),
   alternateRoute: (id: string) => getJson<FlightRoute>(`/api/flights/${encodeURIComponent(id)}/alternate-route`),
   airways: () => getJson<Airway[]>('/api/airways'),
+  health: () => getJson<{ dataSource: string }>('/api/health'),
 };

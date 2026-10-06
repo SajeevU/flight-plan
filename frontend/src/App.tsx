@@ -17,6 +17,7 @@ export default function App() {
   const [highlightedAirway, setHighlightedAirway] = useState<string>();
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
+  const [dataSource, setDataSource] = useState<string>();
 
   // Debounced callsign search.
   useEffect(() => {
@@ -30,6 +31,10 @@ export default function App() {
   }, [search]);
 
   useEffect(() => {
+    api
+      .health()
+      .then((h) => setDataSource(h.dataSource))
+      .catch(() => undefined);
     api
       .airways()
       .then(setAirways)
@@ -70,6 +75,11 @@ export default function App() {
     <div className="app">
       <aside className="sidebar">
         <h1>Flight Plan Viewer</h1>
+        {dataSource && dataSource !== 'caas' && (
+          <p className="source" title="The CAAS API is not being used, so the bundled sample data is shown.">
+            Sample data: {dataSource}
+          </p>
+        )}
         <div className="tabs" role="tablist">
           <button role="tab" aria-selected={tab === 'flights'} onClick={() => setTab('flights')}>
             Flights ({flights.length})

@@ -25,6 +25,7 @@ function mockFetch() {
       return json(flights.filter((f) => f.callsign.includes(term)));
     }
     if (url === '/api/flights') return json(flights);
+    if (url === '/api/health') return json({ status: 'ok', dataSource: 'fixtures (CAAS unreachable)' });
     if (url === '/api/airways') return json([{ name: 'A464', points: [{ lat: 1, lon: 1 }] }]);
     if (url === '/api/flights/f1/route')
       return json({ flight: flights[0], points: [point('WSSS', 'airport'), point('VJR', 'waypoint', 'A464'), point('WMKK', 'airport')], unresolved: ['ZZZ'] });
@@ -50,6 +51,11 @@ describe('App', () => {
     expect(screen.getByText('MAS604')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('tab', { name: /Airways \(1\)/ }));
     expect(screen.getByText('A464')).toBeInTheDocument();
+  });
+
+  it('flags when sample data is shown instead of CAAS data', async () => {
+    render(<App />);
+    expect(await screen.findByText('Sample data: fixtures (CAAS unreachable)')).toBeInTheDocument();
   });
 
   it('filters flights by callsign', async () => {

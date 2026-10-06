@@ -4,9 +4,9 @@ This is the first iteration of the CAAS tech challenge. It lists the flight plan
 
 | | |
 |---|---|
-| **Backend** | NestJS (TypeScript, Node 22). Calls the CAAS APIs, keeps the API key on the server, caches data and resolves routes to coordinates |
+| **Backend** | Java 21 with Spring Boot 3 (Maven). Calls the CAAS APIs, keeps the API key on the server, caches data and resolves routes to coordinates |
 | **Frontend** | React with Vite. Leaflet and OpenStreetMap draw the map |
-| **Tests** | Jest and Supertest for the backend, Vitest and Testing Library for the frontend, Playwright end to end |
+| **Tests** | JUnit 5, AssertJ and MockMvc for the backend (JaCoCo coverage), Vitest and Testing Library for the frontend, Playwright end to end |
 | **Delivery** | Docker multi-stage images, GitHub Actions, Artifact Registry and Google Cloud Run |
 
 ## Components
@@ -16,7 +16,7 @@ flowchart LR
   user([Browser]) -->|HTTPS| fe
 
   subgraph run[Google Cloud Run]
-    fe["frontend<br/>nginx: static React bundle<br/>proxies /api"] -->|/api/*| be["backend<br/>NestJS API"]
+    fe["frontend<br/>nginx: static React bundle<br/>proxies /api"] -->|/api/*| be["backend<br/>Spring Boot API"]
   end
 
   be -->|"apikey header<br/>(from Secret Manager)"| caas[(CAAS SWIM APIs<br/>flight-manager/displayAll<br/>geopoints/list/airways<br/>geopoints/list/fixes)]
@@ -39,15 +39,18 @@ The browser only ever talks to the frontend container. nginx forwards `/api/*` t
 | `GET /api/flights/:id/route` | Returns the filed route resolved to coordinates, plus any designators that couldn't be located |
 | `GET /api/flights/:id/alternate-route` | Returns an alternate route that avoids every filed waypoint (404 if none exists) |
 | `GET /api/airways` | Lists all airways (air routes) with their points |
-| `GET /api/health` | Health check that also says whether the data comes from `caas` or `fixtures` |
+| `GET /api/health` | Health check that also says where the data comes from: `caas`, `fixtures`, or `fixtures (CAAS unreachable)` |
 | `GET /api/docs` | Swagger UI |
 
 Key pieces:
 
-- `src/caas/caas.client.ts` calls the CAAS APIs with the `apikey` header. It keeps an in-memory TTL cache: 60 s for flights and 6 h for airways and fixes, which are large and rarely change. **With no `CAAS_API_KEY` set, it serves the bundled `fixtures/`**, so the app runs and is tested without network access to CAAS.
-- `src/geo/geopoint.ts` parses the aeronautical data format `"WSSL (1.42,103.87)"`.
-- `src/flights/route.resolver.ts` builds the route in order: departure aerodrome, the `filedRoute.routeElement`s sorted by `seqNum`, then the destination. Coordinates in the flight plan are used when present; otherwise the designator is looked up in fixes and airports. When an element continues on an airway, the airway's intermediate points are inserted, so the drawn line follows the airway instead of cutting straight across.
-- `src/flights/alternate-route.ts` builds a graph from airway segments and every filed route's segments, then runs **A\*** (great-circle heuristic) from departure to destination while avoiding the filed route's waypoints.
+All code is under `src/main/java/com/flightplan/`.
+
+- `caas/CaasClient.java` calls the CAAS APIs with Spring's `RestClient` and the `apikey` header (10 s timeout). It keeps an in-memory TTL cache: 60 s for flights and 6 h for airways and fixes, which are large and rarely change. **If CAAS is unreachable, or no `CAAS_API_KEY` is set, it serves the bundled `resources/fixtures/`** and retries CAAS after 60 s. The UI shows a "Sample data" badge whenever fixtures are being served. Settings are bound from `application.yml` into the `CaasProperties` record.
+- `caas/FlightObject.java` holds Java records for the parts of the Flight Object Model that the app reads.
+- `geo/GeoPoint.java` parses the aeronautical data format `"WSSL (1.42,103.87)"`. `geo/LatLon.java` computes great-circle distances.
+- `route/RouteResolver.java` builds the route in order: departure aerodrome, the `filedRoute.routeElement`s sorted by `seqNum`, then the destination. Coordinates in the flight plan are used when present; otherwise the designator is looked up in fixes and airports. When an element continues on an airway, the airway's intermediate points are inserted, so the drawn line follows the airway instead of cutting straight across.
+- `route/RouteGraph.java` builds a graph from airway segments and every filed route's segments, then runs **A\*** (great-circle heuristic) from departure to destination while avoiding the filed route's waypoints.
 
 ### Frontend (`frontend/`)
 
@@ -55,28 +58,28 @@ The sidebar has a **Flights** tab (callsign search and flight list) and an **Air
 
 ## Run it locally
 
-You need Docker, or Node 22 for the development servers.
+You need Docker, or Java 21 with Maven and Node 22 for the development servers.
 
 ```bash
 # Whole stack in containers at http://localhost:8080 (fixture data unless a key is given)
 CAAS_API_KEY=xxxxx docker compose up --build
 
 # Or development servers with hot reload
-cd backend  && npm ci && CAAS_API_KEY=xxxxx npm run start:dev   # http://localhost:3000/api/docs
-cd frontend && npm ci && npm run dev                            # http://localhost:5173 (proxies /api to :3000)
+cd backend  && CAAS_API_KEY=xxxxx mvn spring-boot:run   # http://localhost:8080/api/docs
+cd frontend && npm ci && npm run dev                    # http://localhost:5173 (proxies /api to :8080)
 ```
 
 ## Test
 
 ```bash
-cd backend  && npm run lint && npm run typecheck && npm test   # unit tests + HTTP e2e against fixtures
-cd frontend && npm run lint && npm test                        # component tests (fetch mocked)
+cd backend  && mvn verify                  # unit tests + MockMvc API tests against fixtures; coverage in target/site/jacoco
+cd frontend && npm run lint && npm test    # component tests (fetch mocked)
 docker compose up -d --build && cd frontend && npx playwright test   # browser e2e against the containers
 ```
 
 ## CI/CD (`.github/workflows/pipeline.yml`)
 
-1. **Backend** and **Frontend** jobs run in parallel on every push and PR: `npm ci`, lint, typecheck, unit tests and build.
+1. **Backend** (`mvn verify`: compile, tests, coverage) and **Frontend** (`npm ci`, lint, typecheck, unit tests and build) run in parallel on every push and PR.
 2. The **End-to-end** job builds both images with `docker compose`, starts them and runs Playwright against them.
 3. **Deploy** runs only on `main`, after everything above passes. It authenticates to Google Cloud with Workload Identity Federation (keyless, so no JSON key is stored in GitHub). It then builds both images, tags them with the commit SHA and pushes them to Artifact Registry. Finally it deploys the backend to Cloud Run (the CAAS key comes from Secret Manager), deploys the frontend pointed at the backend's URL, and smoke-tests `/api/health`.
 
@@ -95,7 +98,8 @@ The script enables the APIs and creates the Artifact Registry repo, the `caas-ap
 ## Assumptions and known gaps
 
 - The Swagger specs describe `routeElement.position` as `{lat, lon, designatedPoint}` and the geopoint lists as `"NAME (lat,lon)"` strings. The airways list is assumed to repeat the airway name once per point, in order, and airway expansion is skipped when that doesn't hold. Check these against the live API once the key is in place.
-- The fixtures in `backend/fixtures/` are illustrative (made-up coordinates). Regenerate them with `python3 backend/fixtures/generate.py`.
+- The fixtures in `backend/src/main/resources/fixtures/` are illustrative (made-up coordinates). Regenerate them with `python3 backend/scripts/generate_fixtures.py`.
+- As of October 2026 the CAAS API isn't reachable: port 9080 times out from GitHub, Cloud Run and a home network, and the HTTPS endpoint's certificate has expired. Until that's fixed, the deployed app serves fixtures.
 - The alternate route is only as good as the known network: airways plus routes other flights have filed.
 
 ## Taking it to production

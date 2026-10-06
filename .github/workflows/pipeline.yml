@@ -68,7 +68,7 @@ jobs:
 
   deploy:
     name: Build, push and deploy to Cloud Run
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT_ID != ''
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT_ID != ''
     needs: [e2e]
     runs-on: ubuntu-latest
     environment: production

@@ -80,6 +80,10 @@ docker compose up -d --build && cd frontend && npx playwright test   # browser e
 2. The **End-to-end** job builds both images with `docker compose`, starts them and runs Playwright against them.
 3. **Deploy** runs only on `main`, after everything above passes. It authenticates to Google Cloud with Workload Identity Federation (keyless, so no JSON key is stored in GitHub). It then builds both images, tags them with the commit SHA and pushes them to Artifact Registry. Finally it deploys the backend to Cloud Run (the CAAS key comes from Secret Manager), deploys the frontend pointed at the backend's URL, and smoke-tests `/api/health`.
 
+### CAAS API key
+
+Add the key as a GitHub Actions secret named `CAAS_API_KEY` (Settings > Secrets and variables > Actions). Run the **CAAS API probe** workflow to check it works. The backend reads `CAAS_BASE_URL` (default `http://api.swimapisg.info:9080`), `CAAS_FLIGHTS_PATH` (default `/flightmanager/displayAll`) and `CAAS_GEO_PATH` (default `/geopoints/list`).
+
 ### One-time Google Cloud setup
 
 ```bash

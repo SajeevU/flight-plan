@@ -20,7 +20,9 @@ interface CacheEntry {
 @Injectable()
 export class CaasClient {
   private readonly logger = new Logger(CaasClient.name);
-  private readonly baseUrl = process.env.CAAS_BASE_URL ?? 'https://api.swimapisg.info';
+  private readonly baseUrl = process.env.CAAS_BASE_URL ?? 'http://api.swimapisg.info:9080';
+  private readonly flightsPath = process.env.CAAS_FLIGHTS_PATH ?? '/flightmanager/displayAll';
+  private readonly geoPath = process.env.CAAS_GEO_PATH ?? '/geopoints/list';
   private readonly apiKey = process.env.CAAS_API_KEY;
   readonly mock = process.env.CAAS_MOCK === 'true' || !this.apiKey;
   private readonly flightsTtlMs = Number(process.env.FLIGHTS_CACHE_SECONDS ?? 60) * 1000;
@@ -33,14 +35,14 @@ export class CaasClient {
 
   listFlights(): Promise<FlightObject[]> {
     return this.cached('flights', this.flightsTtlMs, async () => {
-      const data = await this.get('/flight-manager/displayAll', 'flights.json');
+      const data = await this.get(this.flightsPath, 'flights.json');
       return Array.isArray(data) ? (data as FlightObject[]) : [];
     });
   }
 
   listGeo(type: GeoDataset): Promise<string[]> {
     return this.cached(`geo:${type}`, this.geoTtlMs, async () => {
-      const data = await this.get(`/geopoints/list/${type}`, `${type}.json`);
+      const data = await this.get(`${this.geoPath}/${type}`, `${type}.json`);
       return Array.isArray(data) ? (data as string[]) : [];
     });
   }

@@ -16,11 +16,11 @@ public record CaasProperties(
         String apiKey,
         /* Serve the bundled fixtures instead of calling CAAS. Also used when no key is set. */
         @DefaultValue("false") boolean mock,
-        @DefaultValue("10s") Duration timeout,
+        @DefaultValue("5s") Duration timeout,
         @DefaultValue("60s") Duration flightsTtl,
         @DefaultValue("6h") Duration geoTtl,
         /* How long to serve fixtures after CAAS fails before trying it again. */
-        @DefaultValue("60s") Duration fallbackTtl) {
+        @DefaultValue("5m") Duration fallbackTtl) {
 
     public boolean useFixturesOnly() {
         return mock || apiKey == null || apiKey.isBlank();

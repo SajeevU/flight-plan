@@ -16,10 +16,10 @@ caas:
   geo-path: ${CAAS_GEO_PATH:/geopoints/list}
   api-key: ${CAAS_API_KEY:}
   mock: ${CAAS_MOCK:false}
-  timeout: 10s
+  timeout: 5s
   flights-ttl: 60s
   geo-ttl: 6h
-  fallback-ttl: 60s
+  fallback-ttl: 5m # while CAAS is down, retry it at most every 5 minutes
 
 app:
   version: ${APP_VERSION:dev}

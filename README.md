@@ -46,7 +46,7 @@ Key pieces:
 
 All code is under `src/main/java/com/flightplan/`.
 
-- `caas/CaasClient.java` calls the CAAS APIs with Spring's `RestClient` and the `apikey` header (10 s timeout). It keeps an in-memory TTL cache: 60 s for flights and 6 h for airways and fixes, which are large and rarely change. **If CAAS is unreachable, or no `CAAS_API_KEY` is set, it serves the bundled `resources/fixtures/`** and retries CAAS after 60 s. The UI shows a "Sample data" badge whenever fixtures are being served. Settings are bound from `application.yml` into the `CaasProperties` record.
+- `caas/CaasClient.java` calls the CAAS APIs with Spring's `RestClient` and the `apikey` header (5 s timeout). It keeps an in-memory TTL cache: 60 s for flights and 6 h for airways and fixes, which are large and rarely change. **If CAAS is unreachable, or no `CAAS_API_KEY` is set, it serves the bundled `resources/fixtures/`** and retries CAAS every 5 minutes. The UI shows a "Sample data" badge whenever fixtures are being served. Settings are bound from `application.yml` into the `CaasProperties` record.
 - `caas/FlightObject.java` holds Java records for the parts of the Flight Object Model that the app reads.
 - `geo/GeoPoint.java` parses the aeronautical data format `"WSSL (1.42,103.87)"`. `geo/LatLon.java` computes great-circle distances.
 - `route/RouteResolver.java` builds the route in order: departure aerodrome, the `filedRoute.routeElement`s sorted by `seqNum`, then the destination. Coordinates in the flight plan are used when present; otherwise the designator is looked up in fixes and airports. When an element continues on an airway, the airway's intermediate points are inserted, so the drawn line follows the airway instead of cutting straight across.

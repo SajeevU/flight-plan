@@ -14,11 +14,14 @@ jobs:
       - name: Probe endpoints
         run: |
           if [ -z "$CAAS_API_KEY" ]; then echo "::error::CAAS_API_KEY secret is not set"; exit 1; fi
+          set +e
+          echo "DNS: $(getent hosts api.swimapisg.info)"
           probe() {
+            rm -f body.json; touch body.json
             echo "=== $1"
-            code=$(curl -sS -m 60 -o body.json -w '%{http_code}' -H "apikey: $CAAS_API_KEY" "$1" || echo 000)
+            code=$(curl -sS -m 20 -o body.json -w '%{http_code}' -H "apikey: $CAAS_API_KEY" "$1" || echo 000)
             echo "status=$code bytes=$(wc -c < body.json 2>/dev/null || echo 0)"
-            jq -r 'if type=="array" then "items=\(length)" else "type=\(type)" end' body.json 2>/dev/null || head -c 300 body.json
+            jq -r 'if type=="array" then "items=\(length)" else "type=\(type)" end' body.json 2>/dev/null || head -c 300 body.json; echo
           }
           for base in http://api.swimapisg.info:9080 https://api.swimapisg.info; do
             probe "$base/flightmanager/displayAll"
@@ -30,6 +33,6 @@ jobs:
           done
       - name: Sample flight plan structure
         run: |
-          curl -sS -m 60 -H "apikey: $CAAS_API_KEY" http://api.swimapisg.info:9080/flightmanager/displayAll -o flights.json || exit 0
+          curl -sS -m 20 -H "apikey: $CAAS_API_KEY" http://api.swimapisg.info:9080/flightmanager/displayAll -o flights.json || exit 0
           # Shape only: field names of one flight plus its route elements.
           jq '.[0] | {aircraftIdentification, departure, arrival, filedRoute: {routeElement: (.filedRoute.routeElement // [] | .[0:4])}}' flights.json || head -c 1000 flights.json

@@ -25,7 +25,9 @@ public class HealthController {
         String source = switch (caas.dataSource()) {
             case CAAS -> "caas";
             case FIXTURES -> "fixtures";
-            case FIXTURES_CAAS_UNREACHABLE -> "fixtures (CAAS unreachable)";
+            case FIXTURES_CAAS_UNREACHABLE -> caas.snapshotTakenAt() != null
+                    ? "CAAS snapshot from " + caas.snapshotTakenAt() + " (live CAAS unreachable)"
+                    : "fixtures (CAAS unreachable)";
         };
         var body = new java.util.LinkedHashMap<String, String>(Map.of("status", "ok", "dataSource", source, "version", version));
         if (caas.lastError() != null) body.put("lastCaasError", caas.lastError());

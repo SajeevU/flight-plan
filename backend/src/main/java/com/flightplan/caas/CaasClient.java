@@ -24,9 +24,11 @@ import org.springframework.web.client.RestClient;
  * Thin client for the CAAS SWIM APIs. Keeps the API key server-side and caches responses,
  * since the aeronautical datasets are large (the fixes list alone is ~250k entries) and change rarely.
  *
- * <p>If CAAS is unreachable (or no key is configured) it serves the bundled fixtures in
- * {@code resources/fixtures}, so the app stays usable and {@link #dataSource()} says which
- * data is being shown. After a failure it retries CAAS once {@code caas.fallback-ttl} expires.
+ * <p>If CAAS is unreachable (or no key is configured) it serves offline data instead, so the app
+ * stays usable and {@link #dataSource()} says which data is being shown. The offline data is a
+ * snapshot of the real CAAS data in {@code resources/snapshot} when the build took one (CI does,
+ * see scripts/snapshot_caas.sh), otherwise the illustrative {@code resources/fixtures}.
+ * After a failure it retries CAAS once {@code caas.fallback-ttl} expires.
  */
 @Component
 public class CaasClient {
@@ -48,6 +50,11 @@ public class CaasClient {
     private final RestClient http;
     private final ObjectMapper mapper;
     private final Map<String, Entry> cache = new ConcurrentHashMap<>();
+    /** Parsed offline files, read once. */
+    private final Map<String, Object> offline = new ConcurrentHashMap<>();
+    /** "snapshot" or "fixtures": the classpath folder offline data is read from. */
+    private final String offlineDir;
+    private final String snapshotTakenAt;
     private final Map<String, Object> locks = new ConcurrentHashMap<>();
     /** Cache keys currently holding fixture data because CAAS failed for them. */
     private final java.util.Set<String> fallbackKeys = ConcurrentHashMap.newKeySet();
@@ -62,13 +69,21 @@ public class CaasClient {
         var factory = new JdkClientHttpRequestFactory(jdk);
         factory.setReadTimeout(props.readTimeout());
         this.http = builder.baseUrl(props.baseUrl()).requestFactory(factory).build();
+        this.offlineDir = !props.useFixturesOnly() && new ClassPathResource("snapshot/flights.json").exists() ? "snapshot" : "fixtures";
+        this.snapshotTakenAt = offlineDir.equals("snapshot") ? readSnapshotTime() : null;
         if (props.useFixturesOnly()) log.warn("No CAAS API key set (or caas.mock=true): serving bundled fixture data");
+        else log.info("Offline data if CAAS is unreachable: {}", offlineDir);
     }
 
     /** Fixtures by configuration, fixtures because some CAAS call failed, or live CAAS data. */
     public DataSource dataSource() {
         if (props.useFixturesOnly()) return DataSource.FIXTURES;
         return fallbackKeys.isEmpty() ? DataSource.CAAS : DataSource.FIXTURES_CAAS_UNREACHABLE;
+    }
+
+    /** When the bundled CAAS snapshot was taken, or null when the offline data is the sample fixtures. */
+    public String snapshotTakenAt() {
+        return snapshotTakenAt;
     }
 
     /** Why the last CAAS call failed (for /api/health), while any fixture fallback is in use. Never contains the API key. */
@@ -124,14 +139,26 @@ public class CaasClient {
 
     private List<String> fixtureAirwaySearch(String term) {
         List<String> all = fixture("airway-search.json", STRINGS);
+        // Entries look like "A464: [FIX1,...]"; match on the name part, as the live search does.
         return all.stream().filter(entry -> entry.substring(0, entry.indexOf(':')).contains(term)).toList();
     }
 
+    @SuppressWarnings("unchecked")
     private <T> T fixture(String name, TypeReference<T> type) {
-        try (InputStream in = new ClassPathResource("fixtures/" + name).getInputStream()) {
-            return mapper.readValue(in, type);
+        return (T) offline.computeIfAbsent(name, n -> {
+            try (InputStream in = new ClassPathResource(offlineDir + "/" + n).getInputStream()) {
+                return mapper.readValue(in, type);
+            } catch (IOException e) {
+                throw new IllegalStateException("Missing offline data " + offlineDir + "/" + n, e);
+            }
+        });
+    }
+
+    private String readSnapshotTime() {
+        try (InputStream in = new ClassPathResource("snapshot/meta.json").getInputStream()) {
+            return mapper.readTree(in).path("takenAt").asText(null);
         } catch (IOException e) {
-            throw new IllegalStateException("Missing fixture " + name, e);
+            return null;
         }
     }
 

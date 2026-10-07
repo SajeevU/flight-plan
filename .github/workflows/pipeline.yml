@@ -82,6 +82,14 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v2
       - run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 
+      - name: Snapshot real CAAS data into the backend image
+        # Cloud Run can't reach CAAS, but GitHub's runners can. The backend serves this
+        # snapshot when its live calls fail. A failed snapshot doesn't block the deploy.
+        continue-on-error: true
+        env:
+          CAAS_API_KEY: ${{ secrets.CAAS_API_KEY }}
+        run: backend/scripts/snapshot_caas.sh
+
       - name: Build and push images
         run: |
           for svc in backend frontend; do

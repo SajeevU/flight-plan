@@ -90,8 +90,8 @@ export default function App() {
       <aside className="sidebar">
         <h1>Flight Plan Viewer</h1>
         {dataSource && dataSource !== 'caas' && (
-          <p className="source" title="The CAAS API is not being used, so the bundled sample data is shown.">
-            Sample data: {dataSource}
+          <p className="source" title="The server cannot reach the CAAS API right now, so it is showing data bundled with the app.">
+            Offline data: {dataSource}
           </p>
         )}
         <div className="tabs" role="tablist">

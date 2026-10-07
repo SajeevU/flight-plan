@@ -102,6 +102,7 @@ The script enables the APIs and creates the Artifact Registry repo, the `caas-ap
 
 - Picking the nearest candidate for a repeated name is a heuristic. It is right for normal routes, but a route's first point is placed nearest the departure airport, so a flight plan that starts far from its departure could pick the wrong one.
 - The fixtures in `backend/src/main/resources/fixtures/` are illustrative (made-up coordinates). Regenerate them with `python3 backend/scripts/generate_fixtures.py`.
+- **Cloud Run can't connect to CAAS** (connections from Google Cloud time out, while GitHub's runners get through). So the deploy job runs `backend/scripts/snapshot_caas.sh` on the GitHub runner and builds the real data into the image. The backend still tries CAAS live first and serves that snapshot when it can't connect, and the UI shows an "Offline data" badge with the snapshot date. A static outbound IP for Cloud Run (VPC connector + Cloud NAT) that CAAS allowlists would make the live calls work.
 - The fixtures mirror the live formats, including repeated names in other parts of the world, so the tests exercise the nearest-candidate logic.
 - The alternate route is only as good as the known network: airways plus routes other flights have filed.
 

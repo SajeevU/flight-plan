@@ -67,7 +67,7 @@ describe('App', () => {
 
   it('flags when sample data is shown instead of CAAS data', async () => {
     render(<App />);
-    expect(await screen.findByText('Sample data: fixtures (CAAS unreachable)')).toBeInTheDocument();
+    expect(await screen.findByText('Offline data: fixtures (CAAS unreachable)')).toBeInTheDocument();
   });
 
   it('filters flights by callsign', async () => {

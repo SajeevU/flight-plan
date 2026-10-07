@@ -42,6 +42,12 @@ jobs:
           echo "--- field presence across all flights"
           jq -r '[.[] | {dep: (.departure.departureAerodrome|type), arr: (.arrival.destinationAerodrome|type), n: ((.filedRoute.routeElement // [])|length), withLatLon: ([.filedRoute.routeElement[]? | select(.position.lat != null)]|length), withAirway: ([.filedRoute.routeElement[]? | select(.airway != null)]|length)}] | group_by(.dep,.arr) | map({dep: .[0].dep, arr: .[0].arr, flights: length, avgElements: (map(.n)|add/length), elementsWithLatLon: (map(.withLatLon)|add), elementsWithAirway: (map(.withAirway)|add)})' flights.json
           echo "--- distinct callsign sample"; jq -r '[.[].aircraftIdentification] | .[0:15] | join(" ")' flights.json
-          for q in /geopoints/search/airways/W218 /geopoints/search/airways/A464 /geopoints/search/fixes/VJR /geopoints/search/airports/WSSS /geopoints/exist/fixes/VJR; do
+          echo "--- elements carrying lat/lon"; jq -c '[.[] | .filedRoute.routeElement[]? | select(.position.lat != null)] | .[0:4]' flights.json
+          echo "--- distinct airways used by filed routes"; jq '[.[] | .filedRoute.routeElement[]? | .airway // empty] | unique | length' flights.json
+          echo "--- distinct designated points"; jq '[.[] | .filedRoute.routeElement[]? | .position.designatedPoint // empty] | unique | length' flights.json
+          echo "--- last route element vs destination"; jq -c '.[0:5][] | {dest: .arrival.destinationAerodrome, dep: .departure.departureAerodrome, first: .filedRoute.routeElement[0].position.designatedPoint, last: .filedRoute.routeElement[-1]}' flights.json
+          for t in navaids runways; do echo "--- list $t"; get /geopoints/list/$t > l.json; jq -c 'length, .[0:3]' l.json 2>/dev/null || head -c 300 l.json; echo; done
+          echo "--- fix name duplicates"; get /geopoints/list/fixes | jq '[.[] | split(" ")[0]] | group_by(.) | map(select(length>1)) | length'
+          for q in /geopoints/search/airways/A46 /geopoints/search/navaids/VJR /geopoints/search/navaids/KAT /geopoints/search/fixes/ARAMA /geopoints/search/fixes/SULEN /geopoints/search/airways/P570; do
             echo "--- $q"; get "$q" | head -c 1500; echo
           done

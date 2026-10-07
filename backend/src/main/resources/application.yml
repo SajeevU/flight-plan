@@ -11,12 +11,13 @@ spring:
     default-property-inclusion: non_null
 
 caas:
-  base-url: ${CAAS_BASE_URL:http://api.swimapisg.info:9080}
-  flights-path: ${CAAS_FLIGHTS_PATH:/flightmanager/displayAll}
-  geo-path: ${CAAS_GEO_PATH:/geopoints/list}
+  base-url: ${CAAS_BASE_URL:https://api.swimapisg.info}
+  flights-path: ${CAAS_FLIGHTS_PATH:/flight-manager/displayAll}
+  geo-path: ${CAAS_GEO_PATH:/geopoints}
   api-key: ${CAAS_API_KEY:}
   mock: ${CAAS_MOCK:false}
-  timeout: 5s
+  connect-timeout: 5s
+  read-timeout: 60s # the fixes list is ~5.6 MB
   flights-ttl: 60s
   geo-ttl: 6h
   fallback-ttl: 5m # while CAAS is down, retry it at most every 5 minutes

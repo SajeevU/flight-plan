@@ -46,15 +46,17 @@ class ApiIntegrationTest {
     @Test
     void searchesByCallsignCaseInsensitively() throws Exception {
         mvc.perform(get("/api/flights").param("callsign", "sia"))
-                .andExpect(jsonPath("$[*].callsign", contains("SIA200", "SIA622", "SIA978")));
+                .andExpect(jsonPath("$[*].callsign", contains("SIA200", "SIA231", "SIA622", "SIA978")));
     }
 
     @Test
     void resolvesARouteIncludingAirwayPoints() throws Exception {
         mvc.perform(get("/api/flights/{id}/route", idOf("SIA200")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.points[*].name", contains("WSSS", "VJR", "A464", "ATMAX", "WMKK")))
+                .andExpect(jsonPath("$.points[*].name", contains("WSSS", "VJR", "PIBOS", "ATMAX", "WMKK")))
                 .andExpect(jsonPath("$.points[1].kind").value("waypoint"))
+                .andExpect(jsonPath("$.points[1].lat").value(1.62)) // the VJR near Singapore, not the decoy at 40,10
+                .andExpect(jsonPath("$.points[2].kind").value("airway"))
                 .andExpect(jsonPath("$.points[0].airway").doesNotExist())
                 .andExpect(jsonPath("$.unresolved", hasSize(0)));
     }
@@ -74,9 +76,25 @@ class ApiIntegrationTest {
     }
 
     @Test
-    void groupsAirwayPointsByAirway() throws Exception {
-        mvc.perform(get("/api/airways"))
+    void resolvesAirspeedSuffixedAirwaysAndNearestDuplicates() throws Exception {
+        mvc.perform(get("/api/flights/{id}/route", idOf("CPA712")))
+                .andExpect(jsonPath("$.points[*].name", contains("WSSS", "LAVAX", "MABLI", "SABIP", "DOTMI", "SIKOU", "VHHH")))
+                .andExpect(jsonPath("$.points[1].airway").value("M771"));
+    }
+
+    @Test
+    void listsAndFiltersAirwayNames() throws Exception {
+        mvc.perform(get("/api/airways")).andExpect(jsonPath("$", hasSize(14)));
+        mvc.perform(get("/api/airways").param("q", "m7")).andExpect(jsonPath("$", contains("M751", "M768", "M771")));
+    }
+
+    @Test
+    void returnsAnAirwayWithItsFixesOnTheMap() throws Exception {
+        mvc.perform(get("/api/airways/{name}", "A464"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.name == 'A464')].points[*]", hasSize(5)));
+                .andExpect(jsonPath("$.fixes", contains("VJR", "PIBOS", "ATMAX")))
+                .andExpect(jsonPath("$.points", hasSize(3)))
+                .andExpect(jsonPath("$.points[0].lat").value(1.62));
+        mvc.perform(get("/api/airways/{name}", "Z999")).andExpect(status().isNotFound());
     }
 }

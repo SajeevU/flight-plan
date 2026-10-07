@@ -19,7 +19,7 @@ flowchart LR
     fe["frontend<br/>nginx: static React bundle<br/>proxies /api"] -->|/api/*| be["backend<br/>Spring Boot API"]
   end
 
-  be -->|"apikey header<br/>(from Secret Manager)"| caas[(CAAS SWIM APIs<br/>flight-manager/displayAll<br/>geopoints/list/airways<br/>geopoints/list/fixes)]
+  be -->|"apikey header<br/>(from Secret Manager)"| caas[(CAAS SWIM APIs<br/>flight-manager/displayAll<br/>geopoints/list/fixes, navaids, airports, airways<br/>geopoints/search/airways)]
   user -.->|map tiles| osm[(OpenStreetMap)]
 
   subgraph ci[GitHub Actions]
@@ -38,7 +38,8 @@ The browser only ever talks to the frontend container. nginx forwards `/api/*` t
 | `GET /api/flights?callsign=SIA` | Lists flight plans sorted by callsign. Search is a case-insensitive substring match |
 | `GET /api/flights/:id/route` | Returns the filed route resolved to coordinates, plus any designators that couldn't be located |
 | `GET /api/flights/:id/alternate-route` | Returns an alternate route that avoids every filed waypoint (404 if none exists) |
-| `GET /api/airways` | Lists all airways (air routes) with their points |
+| `GET /api/airways?q=A46` | Lists all airway (air route) names, optionally filtered |
+| `GET /api/airways/{name}` | Returns one airway: its fixes in order and their coordinates |
 | `GET /api/health` | Health check that also says where the data comes from: `caas`, `fixtures`, or `fixtures (CAAS unreachable)` |
 | `GET /api/docs` | Swagger UI |
 
@@ -46,15 +47,17 @@ Key pieces:
 
 All code is under `src/main/java/com/flightplan/`.
 
-- `caas/CaasClient.java` calls the CAAS APIs with Spring's `RestClient` and the `apikey` header (5 s timeout). It keeps an in-memory TTL cache: 60 s for flights and 6 h for airways and fixes, which are large and rarely change. **If CAAS is unreachable, or no `CAAS_API_KEY` is set, it serves the bundled `resources/fixtures/`** and retries CAAS every 5 minutes. The UI shows a "Sample data" badge whenever fixtures are being served. Settings are bound from `application.yml` into the `CaasProperties` record.
+- `caas/CaasClient.java` calls the CAAS APIs with Spring's `RestClient` and the `apikey` header. It keeps an in-memory TTL cache: 60 s for flights and 6 h for the aeronautical data, which is large (about 250k fixes, 10k navaids, 13k airports and 9k airways) and rarely changes. The datasets are downloaded and indexed in the background at startup. **If CAAS is unreachable, or no `CAAS_API_KEY` is set, it serves the bundled `resources/fixtures/`** and retries CAAS every 5 minutes. The UI shows a "Sample data" badge whenever fixtures are being served. Settings are bound from `application.yml` into the `CaasProperties` record.
 - `caas/FlightObject.java` holds Java records for the parts of the Flight Object Model that the app reads.
 - `geo/GeoPoint.java` parses the aeronautical data format `"WSSL (1.42,103.87)"`. `geo/LatLon.java` computes great-circle distances.
-- `route/RouteResolver.java` builds the route in order: departure aerodrome, the `filedRoute.routeElement`s sorted by `seqNum`, then the destination. Coordinates in the flight plan are used when present; otherwise the designator is looked up in fixes and airports. When an element continues on an airway, the airway's intermediate points are inserted, so the drawn line follows the airway instead of cutting straight across.
-- `route/RouteGraph.java` builds a graph from airway segments and every filed route's segments, then runs **A\*** (great-circle heuristic) from departure to destination while avoiding the filed route's waypoints.
+- `airways/AeroData.java` builds the point index from the fixes, navaids and airports lists, and looks airways up by name. The airways list only has names; an airway's fixes come from `/geopoints/search/airways/{name}` as `"A464: [CMA,TOPAS,...]"`, parsed by `route/Airway.java`.
+- `route/GeoIndex.java`: **point names are not unique worldwide** (over 12,000 fix names repeat, and KAT is a navaid in Nigeria, Australia and Sri Lanka). Each name maps to all its candidates, and the resolver picks the one nearest the previous point on the route.
+- `route/RouteResolver.java` builds the route in order: departure aerodrome, the `filedRoute.routeElement`s sorted by `seqNum`, then the destination. Each element names a point and the airway flown to the next element (`M300/N0486F410` carries a speed and level change, which is stripped). The airway's fixes between the two points are inserted, so the drawn line follows the airway instead of cutting straight across. Coordinates in the flight plan (sent as strings, for oceanic waypoints) are used directly.
+- `route/RouteGraph.java` builds a graph from the airways used by any current flight plan plus every filed route, then runs **A\*** (great-circle heuristic) from departure to destination while avoiding the filed route's waypoints.
 
 ### Frontend (`frontend/`)
 
-The sidebar has a **Flights** tab (callsign search and flight list) and an **Airways** tab, which lists all air routes and highlights one on the map when you click it. Selecting a flight draws its route in blue and shows the ICAO-style route string, for example `WSSS VJR A464 ATMAX WMKK`. **Show alternate route** draws the alternative as a dashed orange line.
+The sidebar has a **Flights** tab (callsign search and flight list) and an **Airways** tab, which lists all air routes with a filter and draws an airway with its fixes when you click it. Routes that cross the 180° meridian (trans-Pacific flights) are drawn continuously instead of across the whole map. Selecting a flight draws its route in blue and shows the ICAO-style route string, for example `WSSS VJR A464 ATMAX WMKK`. **Show alternate route** draws the alternative as a dashed orange line.
 
 ## Run it locally
 
@@ -85,7 +88,7 @@ docker compose up -d --build && cd frontend && npx playwright test   # browser e
 
 ### CAAS API key
 
-Add the key as a GitHub Actions secret named `CAAS_API_KEY` (Settings > Secrets and variables > Actions). Run the **CAAS API probe** workflow to check it works. The backend reads `CAAS_BASE_URL` (default `http://api.swimapisg.info:9080`), `CAAS_FLIGHTS_PATH` (default `/flightmanager/displayAll`) and `CAAS_GEO_PATH` (default `/geopoints/list`).
+Add the key as a GitHub Actions secret named `CAAS_API_KEY` (Settings > Secrets and variables > Actions). Run the **CAAS API probe** workflow to check it works and print samples of the live data. The backend reads `CAAS_BASE_URL` (default `https://api.swimapisg.info`), `CAAS_FLIGHTS_PATH` (default `/flight-manager/displayAll`) and `CAAS_GEO_PATH` (default `/geopoints`). The `http://...:9080` address from the key email doesn't answer from outside CAAS's network; the HTTPS one does.
 
 ### One-time Google Cloud setup
 
@@ -97,9 +100,9 @@ The script enables the APIs and creates the Artifact Registry repo, the `caas-ap
 
 ## Assumptions and known gaps
 
-- The Swagger specs describe `routeElement.position` as `{lat, lon, designatedPoint}` and the geopoint lists as `"NAME (lat,lon)"` strings. The airways list is assumed to repeat the airway name once per point, in order, and airway expansion is skipped when that doesn't hold. Check these against the live API once the key is in place.
+- Picking the nearest candidate for a repeated name is a heuristic. It is right for normal routes, but a route's first point is placed nearest the departure airport, so a flight plan that starts far from its departure could pick the wrong one.
 - The fixtures in `backend/src/main/resources/fixtures/` are illustrative (made-up coordinates). Regenerate them with `python3 backend/scripts/generate_fixtures.py`.
-- As of October 2026 the CAAS API isn't reachable: port 9080 times out from GitHub, Cloud Run and a home network, and the HTTPS endpoint's certificate has expired. Until that's fixed, the deployed app serves fixtures.
+- The fixtures mirror the live formats, including repeated names in other parts of the world, so the tests exercise the nearest-candidate logic.
 - The alternate route is only as good as the known network: airways plus routes other flights have filed.
 
 ## Taking it to production

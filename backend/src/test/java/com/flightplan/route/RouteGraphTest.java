@@ -2,7 +2,6 @@ package com.flightplan.route;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.flightplan.geo.GeoPoint;
 import com.flightplan.route.RoutePoint.Kind;
 import java.util.List;
 import java.util.Set;
@@ -10,18 +9,18 @@ import org.junit.jupiter.api.Test;
 
 class RouteGraphTest {
 
-    // Two parallel airways from DEP to ARR: NORTH via N (shorter) and SOUTH via S.
-    private static final GeoIndex GEO = GeoIndex.build(
-            List.of(new GeoPoint("N", 1, 1), new GeoPoint("S", -1.5, 1)),
-            List.of(new GeoPoint("DEP", 0, 0), new GeoPoint("ARR", 0, 2)),
-            List.of(new GeoPoint("NORTH", 0, 0), new GeoPoint("NORTH", 1, 1), new GeoPoint("NORTH", 0, 2),
-                    new GeoPoint("SOUTH", 0, 0), new GeoPoint("SOUTH", -1.5, 1), new GeoPoint("SOUTH", 0, 2)));
-
-    private final RouteGraph graph = RouteGraph.build(GEO, List.of());
-
     private static RoutePoint p(String name, double lat, double lon) {
         return new RoutePoint(name, lat, lon, Kind.WAYPOINT, null);
     }
+
+    private static RoutePoint p(String name, double lat, double lon, String airway) {
+        return new RoutePoint(name, lat, lon, Kind.WAYPOINT, airway);
+    }
+
+    // Two parallel airways from DEP to ARR: NORTH via N (shorter) and SOUTH via S.
+    private final RouteGraph graph = RouteGraph.build(List.of(
+            List.of(p("DEP", 0, 0, "NORTH"), p("N", 1, 1, "NORTH"), p("ARR", 0, 2)),
+            List.of(p("DEP", 0, 0, "SOUTH"), p("S", -1.5, 1, "SOUTH"), p("ARR", 0, 2))));
 
     @Test
     void findsTheShortestPathWhenNothingIsAvoided() {

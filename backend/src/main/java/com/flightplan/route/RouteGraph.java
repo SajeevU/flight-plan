@@ -1,6 +1,5 @@
 package com.flightplan.route;
 
-import com.flightplan.geo.GeoPoint;
 import com.flightplan.geo.LatLon;
 import com.flightplan.route.RoutePoint.Kind;
 import java.util.ArrayList;
@@ -24,34 +23,36 @@ public final class RouteGraph {
     private record Node(String key, String name, double lat, double lon, Map<String, String> edges) implements LatLon {}
 
     private final Map<String, Node> nodes = new LinkedHashMap<>();
-    private final Map<String, String> nameAt = new HashMap<>();
 
-    public static RouteGraph build(GeoIndex geo, List<List<RoutePoint>> routes) {
+    /**
+     * @param paths airway paths and filed routes; consecutive points become edges, labelled
+     *              with the airway carried by the earlier point
+     */
+    public static RouteGraph build(List<List<RoutePoint>> paths) {
         RouteGraph g = new RouteGraph();
-        geo.points().values().forEach(p -> g.nameAt.put(p.key(), p.name()));
-        geo.airways().forEach((airway, vertices) -> {
-            for (int i = 1; i < vertices.size(); i++) g.link(vertices.get(i - 1), vertices.get(i), airway);
-        });
-        for (List<RoutePoint> route : routes) {
-            for (int i = 1; i < route.size(); i++) g.link(route.get(i - 1), route.get(i), route.get(i - 1).airway());
+        for (List<RoutePoint> path : paths) {
+            for (int i = 1; i < path.size(); i++) g.link(path.get(i - 1), path.get(i), path.get(i - 1).airway());
         }
         return g;
     }
 
-    private Node node(LatLon p, String fallbackName) {
-        return nodes.computeIfAbsent(p.key(), k -> new Node(k, nameAt.getOrDefault(k, fallbackName), p.lat(), p.lon(), new HashMap<>()));
+    public int size() {
+        return nodes.size();
     }
 
-    private void link(LatLon a, LatLon b, String airway) {
-        Node na = node(a, nameOf(a));
-        Node nb = node(b, nameOf(b));
+    private Node node(RoutePoint p) {
+        return nodes.computeIfAbsent(p.key(), k -> new Node(k, p.name(), p.lat(), p.lon(), new HashMap<>()));
+    }
+
+    private void link(RoutePoint a, RoutePoint b, String airway) {
+        Node na = node(a);
+        Node nb = node(b);
         if (na == nb) return;
-        na.edges().put(nb.key(), airway);
-        nb.edges().put(na.key(), airway);
-    }
-
-    private static String nameOf(LatLon p) {
-        return p instanceof GeoPoint g ? g.name() : p instanceof RoutePoint r ? r.name() : p.key();
+        // Keep an existing airway label rather than overwrite it with an unnamed (direct) leg.
+        if (airway != null || !na.edges().containsKey(nb.key())) {
+            na.edges().put(nb.key(), airway);
+            nb.edges().put(na.key(), airway);
+        }
     }
 
     /**

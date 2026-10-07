@@ -24,7 +24,8 @@ export interface FlightRoute {
 
 export interface Airway {
   name: string;
-  points: { lat: number; lon: number }[];
+  fixes: string[];
+  points: RoutePoint[];
 }
 
 async function getJson<T>(path: string): Promise<T> {
@@ -40,6 +41,7 @@ export const api = {
   flights: (callsign = '') => getJson<FlightSummary[]>(`/api/flights${callsign ? `?callsign=${encodeURIComponent(callsign)}` : ''}`),
   route: (id: string) => getJson<FlightRoute>(`/api/flights/${encodeURIComponent(id)}/route`),
   alternateRoute: (id: string) => getJson<FlightRoute>(`/api/flights/${encodeURIComponent(id)}/alternate-route`),
-  airways: () => getJson<Airway[]>('/api/airways'),
+  airwayNames: () => getJson<string[]>('/api/airways'),
+  airway: (name: string) => getJson<Airway>(`/api/airways/${encodeURIComponent(name)}`),
   health: () => getJson<{ dataSource: string }>('/api/health'),
 };

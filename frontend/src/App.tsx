@@ -10,11 +10,11 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('flights');
   const [search, setSearch] = useState('');
   const [flights, setFlights] = useState<FlightSummary[]>([]);
-  const [airways, setAirways] = useState<Airway[]>([]);
+  const [airwayNames, setAirwayNames] = useState<string[]>([]);
   const [selected, setSelected] = useState<FlightSummary>();
   const [route, setRoute] = useState<FlightRoute>();
   const [alternate, setAlternate] = useState<FlightRoute>();
-  const [highlightedAirway, setHighlightedAirway] = useState<string>();
+  const [airway, setAirway] = useState<Airway>();
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
   const [dataSource, setDataSource] = useState<string>();
@@ -36,15 +36,15 @@ export default function App() {
       .then((h) => setDataSource(h.dataSource))
       .catch(() => undefined);
     api
-      .airways()
-      .then(setAirways)
+      .airwayNames()
+      .then(setAirwayNames)
       .catch((e: Error) => setError(e.message));
   }, []);
 
   const selectFlight = async (flight: FlightSummary) => {
     setSelected(flight);
     setAlternate(undefined);
-    setHighlightedAirway(undefined);
+    setAirway(undefined);
     setError(undefined);
     setLoading(true);
     try {
@@ -54,6 +54,20 @@ export default function App() {
       setError((e as Error).message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const selectAirway = async (name: string) => {
+    setRoute(undefined);
+    setAlternate(undefined);
+    setSelected(undefined);
+    setError(undefined);
+    if (airway?.name === name) return setAirway(undefined);
+    try {
+      setAirway(await api.airway(name));
+    } catch (e) {
+      setAirway(undefined);
+      setError((e as Error).message);
     }
   };
 
@@ -85,7 +99,7 @@ export default function App() {
             Flights ({flights.length})
           </button>
           <button role="tab" aria-selected={tab === 'airways'} onClick={() => setTab('airways')}>
-            Airways ({airways.length})
+            Airways ({airwayNames.length})
           </button>
         </div>
         {tab === 'flights' ? (
@@ -100,16 +114,7 @@ export default function App() {
             <FlightList flights={flights} selectedId={selected?.id} onSelect={selectFlight} />
           </>
         ) : (
-          <AirwayList
-            airways={airways}
-            highlighted={highlightedAirway}
-            onHighlight={(name) => {
-              setHighlightedAirway(name);
-              setRoute(undefined);
-              setAlternate(undefined);
-              setSelected(undefined);
-            }}
-          />
+          <AirwayList names={airwayNames} selected={airway?.name} onSelect={selectAirway} />
         )}
       </aside>
 
@@ -132,7 +137,15 @@ export default function App() {
             {error}
           </div>
         )}
-        <RouteMap route={route?.points} alternate={alternate?.points} airways={airways} highlightedAirway={highlightedAirway} />
+        {airway && (
+          <section className="details" aria-label="Airway details">
+            <div>
+              <strong>{airway.name}</strong> {airway.fixes.length} fixes
+              <div className="route-text">{airway.fixes.join(' ')}</div>
+            </div>
+          </section>
+        )}
+        <RouteMap route={route?.points} alternate={alternate?.points} airway={airway?.points} />
       </main>
     </div>
   );

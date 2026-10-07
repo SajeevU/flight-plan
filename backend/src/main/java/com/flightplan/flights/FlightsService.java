@@ -1,16 +1,19 @@
 package com.flightplan.flights;
 
+import com.flightplan.airways.AeroData;
 import com.flightplan.caas.CaasClient;
-import com.flightplan.caas.CaasClient.GeoDataset;
 import com.flightplan.caas.FlightObject;
-import com.flightplan.geo.GeoPoint;
+import com.flightplan.route.Airway;
 import com.flightplan.route.GeoIndex;
 import com.flightplan.route.RouteGraph;
 import com.flightplan.route.RoutePoint;
 import com.flightplan.route.RouteResolver;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -30,9 +33,11 @@ public class FlightsService {
     public record FlightRoute(FlightSummary flight, List<RoutePoint> points, List<String> unresolved) {}
 
     private final CaasClient caas;
+    private final AeroData aero;
 
-    public FlightsService(CaasClient caas) {
+    public FlightsService(CaasClient caas, AeroData aero) {
         this.caas = caas;
+        this.aero = aero;
     }
 
     /** Flights sorted by callsign; {@code callsign} is a case-insensitive substring filter. */
@@ -47,16 +52,32 @@ public class FlightsService {
 
     public FlightRoute route(String id) {
         FlightObject flight = find(id);
-        var resolved = RouteResolver.resolve(flight, geoIndex());
+        aero.prefetch(RouteResolver.airwaysOf(flight));
+        var resolved = RouteResolver.resolve(flight, aero.geoIndex(), aero::airway);
         return new FlightRoute(toSummary(flight), resolved.points(), resolved.unresolved());
     }
 
+    /**
+     * A route between the same airports that avoids every intermediate point of the filed one,
+     * searched over the airways that any current flight plan uses plus all filed routes.
+     */
     public FlightRoute alternateRoute(String id) {
         FlightObject flight = find(id);
-        GeoIndex geo = geoIndex();
-        var filed = RouteResolver.resolve(flight, geo);
-        var others = caas.listFlights().stream().map(f -> RouteResolver.resolve(f, geo).points()).toList();
-        List<RoutePoint> alternate = RouteGraph.build(geo, others).alternateTo(filed.points())
+        GeoIndex geo = aero.geoIndex();
+        List<FlightObject> all = caas.listFlights();
+        Set<String> airwayNames = new LinkedHashSet<>();
+        all.forEach(f -> airwayNames.addAll(RouteResolver.airwaysOf(f)));
+        aero.prefetch(airwayNames);
+
+        List<List<RoutePoint>> paths = new ArrayList<>();
+        for (String name : airwayNames) {
+            Airway airway = aero.airway(name);
+            if (airway != null) paths.add(airway.path(geo));
+        }
+        all.forEach(f -> paths.add(RouteResolver.resolve(f, geo, aero::airway).points()));
+
+        var filed = RouteResolver.resolve(flight, geo, aero::airway);
+        List<RoutePoint> alternate = RouteGraph.build(paths).alternateTo(filed.points())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No alternate route found in the known airway network"));
         return new FlightRoute(toSummary(flight), alternate, List.of());
     }
@@ -66,19 +87,6 @@ public class FlightsService {
                 .filter(f -> flightId(f).equals(id))
                 .findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Flight " + id + " not found"));
-    }
-
-    private GeoIndex geoIndex() {
-        List<GeoPoint> airports;
-        try {
-            airports = GeoPoint.parseAll(caas.listGeo(GeoDataset.AIRPORTS));
-        } catch (RuntimeException e) {
-            airports = List.of(); // optional: some datasets fold airports into fixes
-        }
-        return GeoIndex.build(
-                GeoPoint.parseAll(caas.listGeo(GeoDataset.FIXES)),
-                airports,
-                GeoPoint.parseAll(caas.listGeo(GeoDataset.AIRWAYS)));
     }
 
     static String flightId(FlightObject f) {

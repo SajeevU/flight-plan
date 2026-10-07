@@ -1,440 +1,454 @@
 [
  {
   "_id": "8d657bac0bdd5ba7b84bf36e",
-  "gufi": "c20ce4ff-8fa4-5a24-ad42-55726fc1758e",
   "messageType": "FPL",
   "aircraftIdentification": "SIA200",
+  "filedRoute": {
+   "routeElement": [
+    {
+     "position": {
+      "designatedPoint": "VJR"
+     },
+     "seqNum": 0,
+     "airwayType": "NAMED",
+     "airway": "A464"
+    },
+    {
+     "position": {
+      "designatedPoint": "ATMAX"
+     },
+     "seqNum": 1,
+     "airwayType": "NAMED"
+    }
+   ]
+  },
   "flightType": "S",
-  "aircraftOperating": "SIA",
-  "departure": {
-   "departureAerodrome": "WSSS",
-   "dateOfFlight": "2026-10-06",
-   "estimatedOffBLockTime": "0130"
-  },
-  "arrival": {
-   "destinationAerodrome": "WMKK"
-  },
   "aircraft": {
    "aircraftType": "A359",
    "aircraftRegistration": "9VSHN"
   },
-  "filedRoute": {
-   "routeElement": [
-    {
-     "seqNum": 1,
-     "position": {
-      "designatedPoint": "VJR"
-     },
-     "airway": "A464",
-     "airwayType": "ATS"
-    },
-    {
-     "seqNum": 2,
-     "position": {
-      "designatedPoint": "ATMAX"
-     }
-    }
-   ]
-  },
-  "lastUpdatedTimeStamp": "2026-10-05T08:00:00Z",
-  "src": "FIXTURE"
- },
- {
-  "_id": "5a1d7018b2f95a2da1c9c652",
-  "gufi": "5e642966-1815-55b2-8145-ac3ecf8272d9",
-  "messageType": "FPL",
-  "aircraftIdentification": "MAS604",
-  "flightType": "S",
-  "aircraftOperating": "MAS",
   "departure": {
    "departureAerodrome": "WSSS",
-   "dateOfFlight": "2026-10-06",
-   "estimatedOffBLockTime": "0215"
+   "dateOfFlight": "2026-10-08",
+   "estimatedOffBLockTime": "01:30:00"
   },
   "arrival": {
    "destinationAerodrome": "WMKK"
   },
+  "aircraftOperating": "SIA",
+  "src": "FIXTURE",
+  "lastUpdatedTimeStamp": "2026-10-07T08:00:00Z"
+ },
+ {
+  "_id": "5a1d7018b2f95a2da1c9c652",
+  "messageType": "FPL",
+  "aircraftIdentification": "MAS604",
+  "filedRoute": {
+   "routeElement": [
+    {
+     "position": {
+      "designatedPoint": "BIKTA"
+     },
+     "seqNum": 0,
+     "airwayType": "NAMED",
+     "airway": "G334"
+    },
+    {
+     "position": {
+      "designatedPoint": "TODAM"
+     },
+     "seqNum": 1,
+     "airwayType": "NAMED"
+    }
+   ]
+  },
+  "flightType": "S",
   "aircraft": {
    "aircraftType": "B738",
    "aircraftRegistration": "9MMXA"
   },
-  "filedRoute": {
-   "routeElement": [
-    {
-     "seqNum": 1,
-     "position": {
-      "designatedPoint": "BIKTA"
-     },
-     "airway": "G334",
-     "airwayType": "ATS"
-    },
-    {
-     "seqNum": 2,
-     "position": {
-      "designatedPoint": "TODAM"
-     }
-    }
-   ]
+  "departure": {
+   "departureAerodrome": "WSSS",
+   "dateOfFlight": "2026-10-08",
+   "estimatedOffBLockTime": "02:15:00"
   },
-  "lastUpdatedTimeStamp": "2026-10-05T08:00:00Z",
-  "src": "FIXTURE"
+  "arrival": {
+   "destinationAerodrome": "WMKK"
+  },
+  "aircraftOperating": "MAS",
+  "src": "FIXTURE",
+  "lastUpdatedTimeStamp": "2026-10-07T08:00:00Z"
  },
  {
   "_id": "e86ca6e9ba2d5551a9696292",
-  "gufi": "8c32617f-ab95-5eed-8831-ec430280f88e",
   "messageType": "FPL",
   "aircraftIdentification": "THA404",
+  "filedRoute": {
+   "routeElement": [
+    {
+     "position": {
+      "designatedPoint": "ARAMA",
+      "lat": "3.2",
+      "lon": "104.2"
+     },
+     "seqNum": 0,
+     "airwayType": "NAMED",
+     "airway": "M751"
+    },
+    {
+     "position": {
+      "designatedPoint": "BIPOP",
+      "lat": "11.3",
+      "lon": "101.4"
+     },
+     "seqNum": 1,
+     "airwayType": "NAMED"
+    }
+   ]
+  },
   "flightType": "S",
-  "aircraftOperating": "THA",
-  "departure": {
-   "departureAerodrome": "WSSS",
-   "dateOfFlight": "2026-10-06",
-   "estimatedOffBLockTime": "0300"
-  },
-  "arrival": {
-   "destinationAerodrome": "VTBS"
-  },
   "aircraft": {
    "aircraftType": "A333",
    "aircraftRegistration": "HSTEK"
   },
-  "filedRoute": {
-   "routeElement": [
-    {
-     "seqNum": 1,
-     "position": {
-      "designatedPoint": "ARAMA",
-      "lat": 3.2,
-      "lon": 104.2
-     },
-     "airway": "M751",
-     "airwayType": "ATS"
-    },
-    {
-     "seqNum": 2,
-     "position": {
-      "designatedPoint": "BIPOP",
-      "lat": 11.3,
-      "lon": 101.4
-     }
-    }
-   ]
-  },
-  "lastUpdatedTimeStamp": "2026-10-05T08:00:00Z",
-  "src": "FIXTURE"
- },
- {
-  "_id": "7e6d1a00def559b9afaf6ad4",
-  "gufi": "500489af-26a3-537f-8239-c00c64d90512",
-  "messageType": "FPL",
-  "aircraftIdentification": "SIA978",
-  "flightType": "S",
-  "aircraftOperating": "SIA",
   "departure": {
    "departureAerodrome": "WSSS",
-   "dateOfFlight": "2026-10-06",
-   "estimatedOffBLockTime": "0410"
+   "dateOfFlight": "2026-10-08",
+   "estimatedOffBLockTime": "03:00:00"
   },
   "arrival": {
    "destinationAerodrome": "VTBS"
   },
+  "aircraftOperating": "THA",
+  "src": "FIXTURE",
+  "lastUpdatedTimeStamp": "2026-10-07T08:00:00Z"
+ },
+ {
+  "_id": "7e6d1a00def559b9afaf6ad4",
+  "messageType": "FPL",
+  "aircraftIdentification": "SIA978",
+  "filedRoute": {
+   "routeElement": [
+    {
+     "position": {
+      "designatedPoint": "ARAMA"
+     },
+     "seqNum": 0,
+     "airwayType": "NAMED",
+     "airway": "M751"
+    },
+    {
+     "position": {
+      "designatedPoint": "IGARI"
+     },
+     "seqNum": 1,
+     "airwayType": "NAMED",
+     "airway": "W17"
+    },
+    {
+     "position": {
+      "designatedPoint": "VPL"
+     },
+     "seqNum": 2,
+     "airwayType": "NAMED",
+     "airway": "R208"
+    },
+    {
+     "position": {
+      "designatedPoint": "BKK"
+     },
+     "seqNum": 3,
+     "airwayType": "NAMED"
+    }
+   ]
+  },
+  "flightType": "S",
   "aircraft": {
    "aircraftType": "B78X",
    "aircraftRegistration": "9VOJA"
   },
-  "filedRoute": {
-   "routeElement": [
-    {
-     "seqNum": 1,
-     "position": {
-      "designatedPoint": "ARAMA"
-     },
-     "airway": "M751",
-     "airwayType": "ATS"
-    },
-    {
-     "seqNum": 2,
-     "position": {
-      "designatedPoint": "IGARI"
-     },
-     "airway": "W17",
-     "airwayType": "ATS"
-    },
-    {
-     "seqNum": 3,
-     "position": {
-      "designatedPoint": "VPL"
-     },
-     "airway": "R208",
-     "airwayType": "ATS"
-    },
-    {
-     "seqNum": 4,
-     "position": {
-      "designatedPoint": "BKK"
-     }
-    }
-   ]
+  "departure": {
+   "departureAerodrome": "WSSS",
+   "dateOfFlight": "2026-10-08",
+   "estimatedOffBLockTime": "04:10:00"
   },
-  "lastUpdatedTimeStamp": "2026-10-05T08:00:00Z",
-  "src": "FIXTURE"
+  "arrival": {
+   "destinationAerodrome": "VTBS"
+  },
+  "aircraftOperating": "SIA",
+  "src": "FIXTURE",
+  "lastUpdatedTimeStamp": "2026-10-07T08:00:00Z"
  },
  {
   "_id": "5f72ecc3294b523fa749cf6a",
-  "gufi": "b903bce9-af13-5b70-af24-e15f7432b9e0",
   "messageType": "FPL",
   "aircraftIdentification": "GIA821",
+  "filedRoute": {
+   "routeElement": [
+    {
+     "position": {
+      "designatedPoint": "BATAM"
+     },
+     "seqNum": 0,
+     "airwayType": "NAMED",
+     "airway": "B470"
+    },
+    {
+     "position": {
+      "designatedPoint": "LAMOB"
+     },
+     "seqNum": 1,
+     "airwayType": "NAMED"
+    }
+   ]
+  },
   "flightType": "S",
-  "aircraftOperating": "GIA",
-  "departure": {
-   "departureAerodrome": "WSSS",
-   "dateOfFlight": "2026-10-06",
-   "estimatedOffBLockTime": "0520"
-  },
-  "arrival": {
-   "destinationAerodrome": "WIII"
-  },
   "aircraft": {
    "aircraftType": "A333",
    "aircraftRegistration": "PKGPZ"
   },
-  "filedRoute": {
-   "routeElement": [
-    {
-     "seqNum": 1,
-     "position": {
-      "designatedPoint": "BATAM"
-     },
-     "airway": "B470",
-     "airwayType": "ATS"
-    },
-    {
-     "seqNum": 2,
-     "position": {
-      "designatedPoint": "LAMOB"
-     }
-    }
-   ]
+  "departure": {
+   "departureAerodrome": "WSSS",
+   "dateOfFlight": "2026-10-08",
+   "estimatedOffBLockTime": "05:20:00"
   },
-  "lastUpdatedTimeStamp": "2026-10-05T08:00:00Z",
-  "src": "FIXTURE"
+  "arrival": {
+   "destinationAerodrome": "WIII"
+  },
+  "aircraftOperating": "GIA",
+  "src": "FIXTURE",
+  "lastUpdatedTimeStamp": "2026-10-07T08:00:00Z"
  },
  {
   "_id": "3283fae0a5f759d8b5919a7d",
-  "gufi": "edc0de75-1e70-52b2-90f7-9512c6457d58",
   "messageType": "FPL",
   "aircraftIdentification": "CPA712",
+  "filedRoute": {
+   "routeElement": [
+    {
+     "position": {
+      "designatedPoint": "LAVAX"
+     },
+     "seqNum": 0,
+     "airwayType": "NAMED",
+     "airway": "M771/N0480F380"
+    },
+    {
+     "position": {
+      "designatedPoint": "SIKOU"
+     },
+     "seqNum": 1,
+     "airwayType": "NAMED"
+    }
+   ]
+  },
   "flightType": "S",
-  "aircraftOperating": "CPA",
-  "departure": {
-   "departureAerodrome": "WSSS",
-   "dateOfFlight": "2026-10-06",
-   "estimatedOffBLockTime": "0605"
-  },
-  "arrival": {
-   "destinationAerodrome": "VHHH"
-  },
   "aircraft": {
    "aircraftType": "A35K",
    "aircraftRegistration": "BLXA"
   },
-  "filedRoute": {
-   "routeElement": [
-    {
-     "seqNum": 1,
-     "position": {
-      "designatedPoint": "LAVAX",
-      "lat": 3.5,
-      "lon": 105.5
-     },
-     "airway": "M771",
-     "airwayType": "ATS"
-    },
-    {
-     "seqNum": 2,
-     "position": {
-      "designatedPoint": "SIKOU",
-      "lat": 18.6,
-      "lon": 113.0
-     }
-    }
-   ]
-  },
-  "lastUpdatedTimeStamp": "2026-10-05T08:00:00Z",
-  "src": "FIXTURE"
- },
- {
-  "_id": "aa55db1529e75e068a840946",
-  "gufi": "bea6d5b5-cd79-579b-853f-f10413fd0a21",
-  "messageType": "FPL",
-  "aircraftIdentification": "PAL502",
-  "flightType": "S",
-  "aircraftOperating": "PAL",
   "departure": {
    "departureAerodrome": "WSSS",
-   "dateOfFlight": "2026-10-06",
-   "estimatedOffBLockTime": "0700"
-  },
-  "arrival": {
-   "destinationAerodrome": "RPLL"
-  },
-  "aircraft": {
-   "aircraftType": "A321",
-   "aircraftRegistration": "RPC9930"
-  },
-  "filedRoute": {
-   "routeElement": [
-    {
-     "seqNum": 1,
-     "position": {
-      "designatedPoint": "LAVAX"
-     },
-     "airway": "N891",
-     "airwayType": "ATS"
-    },
-    {
-     "seqNum": 2,
-     "position": {
-      "designatedPoint": "TONGA"
-     }
-    }
-   ]
-  },
-  "lastUpdatedTimeStamp": "2026-10-05T08:00:00Z",
-  "src": "FIXTURE"
- },
- {
-  "_id": "820d8c07b4d452cc9d209a5e",
-  "gufi": "e77ec4a8-8535-5729-8436-384dad851aae",
-  "messageType": "FPL",
-  "aircraftIdentification": "VJC812",
-  "flightType": "S",
-  "aircraftOperating": "VJC",
-  "departure": {
-   "departureAerodrome": "WSSS",
-   "dateOfFlight": "2026-10-06",
-   "estimatedOffBLockTime": "0745"
-  },
-  "arrival": {
-   "destinationAerodrome": "VVTS"
-  },
-  "aircraft": {
-   "aircraftType": "A321",
-   "aircraftRegistration": "VNA697"
-  },
-  "filedRoute": {
-   "routeElement": [
-    {
-     "seqNum": 1,
-     "position": {
-      "designatedPoint": "TIMEK"
-     },
-     "airway": "L642",
-     "airwayType": "ATS"
-    },
-    {
-     "seqNum": 2,
-     "position": {
-      "designatedPoint": "VIKAS"
-     }
-    }
-   ]
-  },
-  "lastUpdatedTimeStamp": "2026-10-05T08:00:00Z",
-  "src": "FIXTURE"
- },
- {
-  "_id": "1d22a081e4aa59799546e80f",
-  "gufi": "96a226f0-750d-598d-9255-9a6871f28e89",
-  "messageType": "FPL",
-  "aircraftIdentification": "MAS2611",
-  "flightType": "S",
-  "aircraftOperating": "MAS",
-  "departure": {
-   "departureAerodrome": "WSSS",
-   "dateOfFlight": "2026-10-06",
-   "estimatedOffBLockTime": "0830"
-  },
-  "arrival": {
-   "destinationAerodrome": "WBKK"
-  },
-  "aircraft": {
-   "aircraftType": "B738",
-   "aircraftRegistration": "9MMLK"
-  },
-  "filedRoute": {
-   "routeElement": [
-    {
-     "seqNum": 1,
-     "position": {
-      "designatedPoint": "OBDOS"
-     },
-     "airway": "A457",
-     "airwayType": "ATS"
-    },
-    {
-     "seqNum": 2,
-     "position": {
-      "designatedPoint": "MIBEL"
-     }
-    }
-   ]
-  },
-  "lastUpdatedTimeStamp": "2026-10-05T08:00:00Z",
-  "src": "FIXTURE"
- },
- {
-  "_id": "e0f1da78ddf3539eb1b76321",
-  "gufi": "21277e9f-bc24-520d-8f81-e84932007238",
-  "messageType": "FPL",
-  "aircraftIdentification": "SIA622",
-  "flightType": "S",
-  "aircraftOperating": "SIA",
-  "departure": {
-   "departureAerodrome": "WSSS",
-   "dateOfFlight": "2026-10-06",
-   "estimatedOffBLockTime": "0915"
+   "dateOfFlight": "2026-10-08",
+   "estimatedOffBLockTime": "06:05:00"
   },
   "arrival": {
    "destinationAerodrome": "VHHH"
   },
+  "aircraftOperating": "CPA",
+  "src": "FIXTURE",
+  "lastUpdatedTimeStamp": "2026-10-07T08:00:00Z"
+ },
+ {
+  "_id": "aa55db1529e75e068a840946",
+  "messageType": "FPL",
+  "aircraftIdentification": "PAL502",
+  "filedRoute": {
+   "routeElement": [
+    {
+     "position": {
+      "designatedPoint": "LAVAX"
+     },
+     "seqNum": 0,
+     "airwayType": "NAMED",
+     "airway": "N891"
+    },
+    {
+     "position": {
+      "designatedPoint": "TONGA"
+     },
+     "seqNum": 1,
+     "airwayType": "NAMED"
+    }
+   ]
+  },
+  "flightType": "S",
+  "aircraft": {
+   "aircraftType": "A321",
+   "aircraftRegistration": "RPC9930"
+  },
+  "departure": {
+   "departureAerodrome": "WSSS",
+   "dateOfFlight": "2026-10-08",
+   "estimatedOffBLockTime": "07:00:00"
+  },
+  "arrival": {
+   "destinationAerodrome": "RPLL"
+  },
+  "aircraftOperating": "PAL",
+  "src": "FIXTURE",
+  "lastUpdatedTimeStamp": "2026-10-07T08:00:00Z"
+ },
+ {
+  "_id": "820d8c07b4d452cc9d209a5e",
+  "messageType": "FPL",
+  "aircraftIdentification": "VJC812",
+  "filedRoute": {
+   "routeElement": [
+    {
+     "position": {
+      "designatedPoint": "TIMEK"
+     },
+     "seqNum": 0,
+     "airwayType": "NAMED",
+     "airway": "L642"
+    },
+    {
+     "position": {
+      "designatedPoint": "VIKAS"
+     },
+     "seqNum": 1,
+     "airwayType": "NAMED"
+    }
+   ]
+  },
+  "flightType": "S",
+  "aircraft": {
+   "aircraftType": "A321",
+   "aircraftRegistration": "VNA697"
+  },
+  "departure": {
+   "departureAerodrome": "WSSS",
+   "dateOfFlight": "2026-10-08",
+   "estimatedOffBLockTime": "07:45:00"
+  },
+  "arrival": {
+   "destinationAerodrome": "VVTS"
+  },
+  "aircraftOperating": "VJC",
+  "src": "FIXTURE",
+  "lastUpdatedTimeStamp": "2026-10-07T08:00:00Z"
+ },
+ {
+  "_id": "1d22a081e4aa59799546e80f",
+  "messageType": "FPL",
+  "aircraftIdentification": "MAS2611",
+  "filedRoute": {
+   "routeElement": [
+    {
+     "position": {
+      "designatedPoint": "OBDOS"
+     },
+     "seqNum": 0,
+     "airwayType": "NAMED",
+     "airway": "A457"
+    },
+    {
+     "position": {
+      "designatedPoint": "MIBEL"
+     },
+     "seqNum": 1,
+     "airwayType": "NAMED"
+    }
+   ]
+  },
+  "flightType": "S",
+  "aircraft": {
+   "aircraftType": "B738",
+   "aircraftRegistration": "9MMLK"
+  },
+  "departure": {
+   "departureAerodrome": "WSSS",
+   "dateOfFlight": "2026-10-08",
+   "estimatedOffBLockTime": "08:30:00"
+  },
+  "arrival": {
+   "destinationAerodrome": "WBKK"
+  },
+  "aircraftOperating": "MAS",
+  "src": "FIXTURE",
+  "lastUpdatedTimeStamp": "2026-10-07T08:00:00Z"
+ },
+ {
+  "_id": "e0f1da78ddf3539eb1b76321",
+  "messageType": "FPL",
+  "aircraftIdentification": "SIA622",
+  "filedRoute": {
+   "routeElement": [
+    {
+     "position": {
+      "designatedPoint": "LAVAX"
+     },
+     "seqNum": 0,
+     "airwayType": "NAMED",
+     "airway": "M771"
+    },
+    {
+     "position": {
+      "designatedPoint": "MABLI"
+     },
+     "seqNum": 1,
+     "airwayType": "NAMED",
+     "airway": "M771"
+    },
+    {
+     "position": {
+      "designatedPoint": "DOTMI"
+     },
+     "seqNum": 2,
+     "airwayType": "NAMED"
+    }
+   ]
+  },
+  "flightType": "S",
   "aircraft": {
    "aircraftType": "A388",
    "aircraftRegistration": "9VSKS"
   },
-  "filedRoute": {
-   "routeElement": [
-    {
-     "seqNum": 1,
-     "position": {
-      "designatedPoint": "LAVAX",
-      "lat": 3.5,
-      "lon": 105.5
-     },
-     "airway": "M771",
-     "airwayType": "ATS"
-    },
-    {
-     "seqNum": 2,
-     "position": {
-      "designatedPoint": "MABLI",
-      "lat": 6.8,
-      "lon": 107.2
-     },
-     "airway": "M771",
-     "airwayType": "ATS"
-    },
-    {
-     "seqNum": 3,
-     "position": {
-      "designatedPoint": "DOTMI",
-      "lat": 14.2,
-      "lon": 111.8
-     }
-    }
-   ]
+  "departure": {
+   "departureAerodrome": "WSSS",
+   "dateOfFlight": "2026-10-08",
+   "estimatedOffBLockTime": "09:15:00"
   },
-  "lastUpdatedTimeStamp": "2026-10-05T08:00:00Z",
-  "src": "FIXTURE"
+  "arrival": {
+   "destinationAerodrome": "VHHH"
+  },
+  "aircraftOperating": "SIA",
+  "src": "FIXTURE",
+  "lastUpdatedTimeStamp": "2026-10-07T08:00:00Z"
+ },
+ {
+  "_id": "d6ed13c5649052c8ab8c6410",
+  "messageType": "FPL",
+  "aircraftIdentification": "SIA231",
+  "filedRoute": {
+   "routeElement": []
+  },
+  "flightType": "S",
+  "aircraft": {
+   "aircraftType": "A359",
+   "aircraftRegistration": "9VSHA"
+  },
+  "departure": {
+   "departureAerodrome": "WSSS",
+   "dateOfFlight": "2026-10-08",
+   "estimatedOffBLockTime": "10:00:00"
+  },
+  "arrival": {
+   "destinationAerodrome": "YSSY"
+  },
+  "aircraftOperating": "SIA",
+  "src": "FIXTURE",
+  "lastUpdatedTimeStamp": "2026-10-07T08:00:00Z"
  }
 ]

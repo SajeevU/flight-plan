@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.http.HttpClient;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,7 @@ import org.springframework.web.client.RestClient;
 
 /**
  * Thin client for the CAAS SWIM APIs. Keeps the API key server-side and caches responses,
- * since the airway and fix datasets are large and change rarely.
+ * since the aeronautical datasets are large (the fixes list alone is ~250k entries) and change rarely.
  *
  * <p>If CAAS is unreachable (or no key is configured) it serves the bundled fixtures in
  * {@code resources/fixtures}, so the app stays usable and {@link #dataSource()} says which
@@ -30,13 +31,18 @@ import org.springframework.web.client.RestClient;
 @Component
 public class CaasClient {
 
-    public enum GeoDataset { AIRWAYS, FIXES, AIRPORTS }
+    /** The "NAME (lat,lon)" datasets of the aeronautical data service. */
+    public enum GeoDataset { FIXES, NAVAIDS, AIRPORTS }
 
     public enum DataSource { CAAS, FIXTURES, FIXTURES_CAAS_UNREACHABLE }
 
     private static final Logger log = LoggerFactory.getLogger(CaasClient.class);
+    private static final TypeReference<List<String>> STRINGS = new TypeReference<>() {};
 
     private record Entry(Instant expires, Object value) {}
+
+    /** Result of one load: the data plus whether it came from the fixture fallback. */
+    private record Loaded<T>(T value, boolean fallback) {}
 
     private final CaasProperties props;
     private final RestClient http;
@@ -50,9 +56,9 @@ public class CaasClient {
     public CaasClient(CaasProperties props, RestClient.Builder builder, ObjectMapper mapper) {
         this.props = props;
         this.mapper = mapper;
-        var jdk = HttpClient.newBuilder().connectTimeout(props.timeout()).build();
+        var jdk = HttpClient.newBuilder().connectTimeout(props.connectTimeout()).build();
         var factory = new JdkClientHttpRequestFactory(jdk);
-        factory.setReadTimeout(props.timeout());
+        factory.setReadTimeout(props.readTimeout());
         this.http = builder.baseUrl(props.baseUrl()).requestFactory(factory).build();
         this.dataSource = props.useFixturesOnly() ? DataSource.FIXTURES : DataSource.CAAS;
         if (props.useFixturesOnly()) log.warn("No CAAS API key set (or caas.mock=true): serving bundled fixture data");
@@ -63,22 +69,36 @@ public class CaasClient {
     }
 
     public List<FlightObject> listFlights() {
-        return cached("flights", props.flightsTtl(), () -> fetch(props.flightsPath(), "flights.json",
-                new ParameterizedTypeReference<List<FlightObject>>() {}, new TypeReference<List<FlightObject>>() {}));
+        return cached("flights", props.flightsTtl(), () -> fetch(props.flightsPath(),
+                new ParameterizedTypeReference<List<FlightObject>>() {},
+                () -> fixture("flights.json", new TypeReference<List<FlightObject>>() {})));
     }
 
+    /** All entries of a "NAME (lat,lon)" dataset. */
     public List<String> listGeo(GeoDataset type) {
         String name = type.name().toLowerCase();
-        return cached("geo:" + name, props.geoTtl(), () -> fetch(props.geoPath() + "/" + name, name + ".json",
-                new ParameterizedTypeReference<List<String>>() {}, new TypeReference<List<String>>() {}));
+        return cached("geo:" + name, props.geoTtl(), () -> fetch(props.geoPath() + "/list/" + name,
+                new ParameterizedTypeReference<List<String>>() {}, () -> fixture(name + ".json", STRINGS)));
     }
 
-    /** Result of one load: the data plus whether it came from the fixture fallback. */
-    private record Loaded<T>(T value, boolean fallback) {}
+    /** Names of all airways. The list endpoint returns names only, without their fixes. */
+    public List<String> listAirwayNames() {
+        return cached("geo:airways", props.geoTtl(), () -> fetch(props.geoPath() + "/list/airways",
+                new ParameterizedTypeReference<List<String>>() {}, () -> fixture("airways.json", STRINGS)));
+    }
 
-    private <T> Loaded<T> fetch(String path, String fixture, ParameterizedTypeReference<T> type, TypeReference<T> fixtureType) {
-        if (props.useFixturesOnly()) return new Loaded<>(fixture(fixture, fixtureType), false);
-        if (Instant.now().isBefore(caasDownUntil)) return new Loaded<>(fixture(fixture, fixtureType), true);
+    /**
+     * Airways whose name contains {@code term}, as "NAME: [FIX1,FIX2,...]" strings with the fixes
+     * in published order. This is the only endpoint that returns an airway's fixes.
+     */
+    public List<String> searchAirways(String term) {
+        return cached("airway:" + term, props.geoTtl(), () -> fetch(props.geoPath() + "/search/airways/" + term,
+                new ParameterizedTypeReference<List<String>>() {}, () -> fixtureAirwaySearch(term)));
+    }
+
+    private <T> Loaded<T> fetch(String path, ParameterizedTypeReference<T> type, Supplier<T> fixture) {
+        if (props.useFixturesOnly()) return new Loaded<>(fixture.get(), false);
+        if (Instant.now().isBefore(caasDownUntil)) return new Loaded<>(fixture.get(), true);
         try {
             T body = http.get().uri(path)
                     .header("apikey", props.apiKey())
@@ -88,11 +108,16 @@ public class CaasClient {
             dataSource = DataSource.CAAS;
             return new Loaded<>(body, false);
         } catch (RuntimeException e) {
-            log.error("CAAS {} failed ({}); serving fixture {}", path, e.getMessage(), fixture);
+            log.error("CAAS {} failed ({}); serving fixture data", path, e.getMessage());
             dataSource = DataSource.FIXTURES_CAAS_UNREACHABLE;
             caasDownUntil = Instant.now().plus(props.fallbackTtl());
-            return new Loaded<>(fixture(fixture, fixtureType), true);
+            return new Loaded<>(fixture.get(), true);
         }
+    }
+
+    private List<String> fixtureAirwaySearch(String term) {
+        List<String> all = fixture("airway-search.json", STRINGS);
+        return all.stream().filter(entry -> entry.substring(0, entry.indexOf(':')).contains(term)).toList();
     }
 
     private <T> T fixture(String name, TypeReference<T> type) {
@@ -104,7 +129,7 @@ public class CaasClient {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> T cached(String key, java.time.Duration ttl, Supplier<Loaded<T>> load) {
+    private <T> T cached(String key, Duration ttl, Supplier<Loaded<T>> load) {
         Entry hit = cache.get(key);
         if (hit != null && hit.expires().isAfter(Instant.now())) return (T) hit.value();
         // One loader per key, so concurrent requests don't all hit CAAS at once.

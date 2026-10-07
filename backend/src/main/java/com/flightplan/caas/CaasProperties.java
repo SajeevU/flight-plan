@@ -10,16 +10,18 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  */
 @ConfigurationProperties(prefix = "caas")
 public record CaasProperties(
-        @DefaultValue("http://api.swimapisg.info:9080") String baseUrl,
-        @DefaultValue("/flightmanager/displayAll") String flightsPath,
-        @DefaultValue("/geopoints/list") String geoPath,
+        @DefaultValue("https://api.swimapisg.info") String baseUrl,
+        @DefaultValue("/flight-manager/displayAll") String flightsPath,
+        @DefaultValue("/geopoints") String geoPath,
         String apiKey,
         /* Serve the bundled fixtures instead of calling CAAS. Also used when no key is set. */
         @DefaultValue("false") boolean mock,
-        @DefaultValue("5s") Duration timeout,
+        @DefaultValue("5s") Duration connectTimeout,
+        /* Generous: the fixes list is ~5.6 MB. */
+        @DefaultValue("60s") Duration readTimeout,
         @DefaultValue("60s") Duration flightsTtl,
         @DefaultValue("6h") Duration geoTtl,
-        /* How long to serve fixtures after CAAS fails before trying it again. */
+        /* While CAAS is failing, serve fixtures and retry it at most this often. */
         @DefaultValue("5m") Duration fallbackTtl) {
 
     public boolean useFixturesOnly() {

@@ -3,10 +3,12 @@ import userEvent from '@testing-library/user-event';
 import App from './App';
 
 // Leaflet needs a real browser; the map itself is covered by the Playwright test.
+type Pts = { name: string }[];
 vi.mock('./components/RouteMap', () => ({
-  RouteMap: ({ route = [], alternate = [] }: { route?: { name: string }[]; alternate?: { name: string }[] }) => (
+  RouteMap: ({ route = [], alternate = [], airway = [] }: { route?: Pts; alternate?: Pts; airway?: Pts }) => (
     <div data-testid="map">
-      route:{route.map((p) => p.name).join(',')} alt:{alternate.map((p) => p.name).join(',')}
+      route:{route.map((p) => p.name).join(',')} alt:{alternate.map((p) => p.name).join(',')} airway:
+      {airway.map((p) => p.name).join(',')}
     </div>
   ),
 }));
@@ -26,7 +28,9 @@ function mockFetch() {
     }
     if (url === '/api/flights') return json(flights);
     if (url === '/api/health') return json({ status: 'ok', dataSource: 'fixtures (CAAS unreachable)' });
-    if (url === '/api/airways') return json([{ name: 'A464', points: [{ lat: 1, lon: 1 }] }]);
+    if (url === '/api/airways') return json(['A464', 'G334']);
+    if (url === '/api/airways/A464')
+      return json({ name: 'A464', fixes: ['VJR', 'PIBOS', 'ATMAX'], points: [point('VJR'), point('PIBOS'), point('ATMAX')] });
     if (url === '/api/flights/f1/route')
       return json({ flight: flights[0], points: [point('WSSS', 'airport'), point('VJR', 'waypoint', 'A464'), point('WMKK', 'airport')], unresolved: ['ZZZ'] });
     if (url === '/api/flights/f1/alternate-route')
@@ -45,12 +49,20 @@ describe('App', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it('lists flights and airways', async () => {
+  it('lists flights', async () => {
     render(<App />);
     expect(await screen.findByText('SIA200')).toBeInTheDocument();
     expect(screen.getByText('MAS604')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('tab', { name: /Airways \(1\)/ }));
-    expect(screen.getByText('A464')).toBeInTheDocument();
+  });
+
+  it('lists, filters and shows airways', async () => {
+    render(<App />);
+    await userEvent.click(await screen.findByRole('tab', { name: /Airways \(2\)/ }));
+    await userEvent.type(screen.getByLabelText('Filter airways'), 'a4');
+    expect(screen.queryByText('G334')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByText('A464'));
+    expect(await screen.findByText('VJR PIBOS ATMAX')).toBeInTheDocument();
+    expect(screen.getByTestId('map')).toHaveTextContent('airway:VJR,PIBOS,ATMAX');
   });
 
   it('flags when sample data is shown instead of CAAS data', async () => {

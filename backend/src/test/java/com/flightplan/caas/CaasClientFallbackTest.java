@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 /** CAAS is unreachable (nothing listens on port 9): the client must fall back to fixtures, not fail. */
-@SpringBootTest(properties = {"caas.base-url=http://127.0.0.1:9", "caas.api-key=test", "caas.timeout=2s"})
+@SpringBootTest(properties = {"caas.base-url=http://127.0.0.1:9", "caas.api-key=test", "caas.connect-timeout=2s"})
 class CaasClientFallbackTest {
 
     @Autowired

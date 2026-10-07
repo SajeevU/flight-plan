@@ -98,7 +98,8 @@ jobs:
           region: ${{ env.REGION }}
           image: ${{ env.REGISTRY }}/backend:${{ github.sha }}
           secrets: CAAS_API_KEY=caas-api-key:latest
-          flags: --allow-unauthenticated --max-instances=2
+          # 1 GiB: the backend keeps ~270k aeronautical points in memory.
+          flags: --allow-unauthenticated --max-instances=2 --memory=1Gi
 
       - name: Deploy frontend
         id: frontend

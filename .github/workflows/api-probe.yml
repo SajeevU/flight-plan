@@ -31,8 +31,17 @@ jobs:
               jq -c '.[0:3]' body.json 2>/dev/null || true
             done
           done
-      - name: Sample flight plan structure
+      - name: Sample live data shapes
         run: |
-          curl -sS -m 20 -H "apikey: $CAAS_API_KEY" http://api.swimapisg.info:9080/flightmanager/displayAll -o flights.json || exit 0
-          # Shape only: field names of one flight plus its route elements.
-          jq '.[0] | {aircraftIdentification, departure, arrival, filedRoute: {routeElement: (.filedRoute.routeElement // [] | .[0:4])}}' flights.json || head -c 1000 flights.json
+          set +e
+          B=https://api.swimapisg.info
+          get() { curl -sS -m 60 -H "apikey: $CAAS_API_KEY" "$B$1"; }
+          get /flight-manager/displayAll > flights.json
+          echo "--- one flight (route elements truncated)"
+          jq '.[0] | .filedRoute.routeElement |= (.[0:5])' flights.json | head -c 6000; echo
+          echo "--- field presence across all flights"
+          jq -r '[.[] | {dep: (.departure.departureAerodrome|type), arr: (.arrival.destinationAerodrome|type), n: ((.filedRoute.routeElement // [])|length), withLatLon: ([.filedRoute.routeElement[]? | select(.position.lat != null)]|length), withAirway: ([.filedRoute.routeElement[]? | select(.airway != null)]|length)}] | group_by(.dep,.arr) | map({dep: .[0].dep, arr: .[0].arr, flights: length, avgElements: (map(.n)|add/length), elementsWithLatLon: (map(.withLatLon)|add), elementsWithAirway: (map(.withAirway)|add)})' flights.json
+          echo "--- distinct callsign sample"; jq -r '[.[].aircraftIdentification] | .[0:15] | join(" ")' flights.json
+          for q in /geopoints/search/airways/W218 /geopoints/search/airways/A464 /geopoints/search/fixes/VJR /geopoints/search/airports/WSSS /geopoints/exist/fixes/VJR; do
+            echo "--- $q"; get "$q" | head -c 1500; echo
+          done

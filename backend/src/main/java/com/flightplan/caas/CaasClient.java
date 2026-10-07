@@ -49,7 +49,8 @@ public class CaasClient {
     private final ObjectMapper mapper;
     private final Map<String, Entry> cache = new ConcurrentHashMap<>();
     private final Map<String, Object> locks = new ConcurrentHashMap<>();
-    private volatile DataSource dataSource;
+    /** Cache keys currently holding fixture data because CAAS failed for them. */
+    private final java.util.Set<String> fallbackKeys = ConcurrentHashMap.newKeySet();
     /** After a failure, skip CAAS until this time so every dataset doesn't wait out its own timeout. */
     private volatile Instant caasDownUntil = Instant.MIN;
     private volatile String lastError;
@@ -61,17 +62,18 @@ public class CaasClient {
         var factory = new JdkClientHttpRequestFactory(jdk);
         factory.setReadTimeout(props.readTimeout());
         this.http = builder.baseUrl(props.baseUrl()).requestFactory(factory).build();
-        this.dataSource = props.useFixturesOnly() ? DataSource.FIXTURES : DataSource.CAAS;
         if (props.useFixturesOnly()) log.warn("No CAAS API key set (or caas.mock=true): serving bundled fixture data");
     }
 
+    /** Fixtures by configuration, fixtures because some CAAS call failed, or live CAAS data. */
     public DataSource dataSource() {
-        return dataSource;
+        if (props.useFixturesOnly()) return DataSource.FIXTURES;
+        return fallbackKeys.isEmpty() ? DataSource.CAAS : DataSource.FIXTURES_CAAS_UNREACHABLE;
     }
 
-    /** Why the last CAAS call failed (for /api/health), or null. Never contains the API key. */
+    /** Why the last CAAS call failed (for /api/health), while any fixture fallback is in use. Never contains the API key. */
     public String lastError() {
-        return lastError;
+        return fallbackKeys.isEmpty() ? null : lastError;
     }
 
     public List<FlightObject> listFlights() {
@@ -111,12 +113,9 @@ public class CaasClient {
                     .accept(MediaType.APPLICATION_JSON)
                     .retrieve()
                     .body(type);
-            dataSource = DataSource.CAAS;
-            lastError = null;
             return new Loaded<>(body, false);
         } catch (RuntimeException e) {
             log.error("CAAS {} failed ({}); serving fixture data", path, e.getMessage());
-            dataSource = DataSource.FIXTURES_CAAS_UNREACHABLE;
             lastError = Instant.now() + " " + path + ": " + e.getClass().getSimpleName() + ": " + e.getMessage();
             caasDownUntil = Instant.now().plus(props.fallbackTtl());
             return new Loaded<>(fixture.get(), true);
@@ -147,6 +146,8 @@ public class CaasClient {
             Loaded<T> loaded = load.get();
             // Fallback data is kept briefly so CAAS is retried soon.
             var expires = Instant.now().plus(loaded.fallback() ? props.fallbackTtl() : ttl);
+            if (loaded.fallback()) fallbackKeys.add(key);
+            else fallbackKeys.remove(key);
             cache.put(key, new Entry(expires, loaded.value()));
             return loaded.value();
         }

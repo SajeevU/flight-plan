@@ -52,6 +52,7 @@ public class CaasClient {
     private volatile DataSource dataSource;
     /** After a failure, skip CAAS until this time so every dataset doesn't wait out its own timeout. */
     private volatile Instant caasDownUntil = Instant.MIN;
+    private volatile String lastError;
 
     public CaasClient(CaasProperties props, RestClient.Builder builder, ObjectMapper mapper) {
         this.props = props;
@@ -66,6 +67,11 @@ public class CaasClient {
 
     public DataSource dataSource() {
         return dataSource;
+    }
+
+    /** Why the last CAAS call failed (for /api/health), or null. Never contains the API key. */
+    public String lastError() {
+        return lastError;
     }
 
     public List<FlightObject> listFlights() {
@@ -106,10 +112,12 @@ public class CaasClient {
                     .retrieve()
                     .body(type);
             dataSource = DataSource.CAAS;
+            lastError = null;
             return new Loaded<>(body, false);
         } catch (RuntimeException e) {
             log.error("CAAS {} failed ({}); serving fixture data", path, e.getMessage());
             dataSource = DataSource.FIXTURES_CAAS_UNREACHABLE;
+            lastError = Instant.now() + " " + path + ": " + e.getClass().getSimpleName() + ": " + e.getMessage();
             caasDownUntil = Instant.now().plus(props.fallbackTtl());
             return new Loaded<>(fixture.get(), true);
         }

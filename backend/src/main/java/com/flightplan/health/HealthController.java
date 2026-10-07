@@ -27,6 +27,8 @@ public class HealthController {
             case FIXTURES -> "fixtures";
             case FIXTURES_CAAS_UNREACHABLE -> "fixtures (CAAS unreachable)";
         };
-        return Map.of("status", "ok", "dataSource", source, "version", version);
+        var body = new java.util.LinkedHashMap<String, String>(Map.of("status", "ok", "dataSource", source, "version", version));
+        if (caas.lastError() != null) body.put("lastCaasError", caas.lastError());
+        return body;
     }
 }
